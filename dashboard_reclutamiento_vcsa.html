@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>VCSA · Reclutamiento BHP</title>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="msal-browser.min.js"></script>
+<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
 <style>
 :root{
   --bg:#F5F3EF;--surface:#FFFFFF;--s2:#F9F8F5;--s3:#F0EEE8;
@@ -103,6 +103,38 @@ td{padding:10px 14px;vertical-align:middle}
 
 /* ── Archive banner ─────────────────────────────── */
 .arc-reason{font-size:11px;padding:2px 7px;border-radius:99px;background:var(--rl);color:#991b1b;font-weight:500}
+
+/* ── Semáforo SLA ───────────────────────────────── */
+.sla-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
+.sla-dot.verde{background:#16a34a}.sla-dot.amarillo{background:#d97706}.sla-dot.rojo{background:#dc2626}
+.sla-cell{display:flex;align-items:center;gap:6px}
+.sla-dias{font-size:12px;font-weight:700;font-family:'DM Mono',monospace}
+.sla-dias.verde{color:#15803d}.sla-dias.amarillo{color:#b45309}.sla-dias.rojo{color:#dc2626}
+.sla-lbl{font-size:10px;color:var(--text3)}
+
+/* ── Reporte ────────────────────────────────────── */
+.rpt-controls{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:flex-end}
+.rpt-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl2);overflow:hidden;margin-bottom:16px}
+.rpt-section-head{padding:12px 16px;background:var(--s2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.rpt-section-title{font-size:13px;font-weight:700}
+.rpt-section-sub{font-size:11px;color:var(--text3)}
+.rpt-row{display:grid;grid-template-columns:2fr 1.5fr 1.5fr 1fr 80px;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);align-items:center}
+.rpt-row:last-child{border-bottom:none}
+.rpt-row:hover{background:var(--s2)}
+.rpt-head{background:var(--s3);font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:8px 16px;display:grid;grid-template-columns:2fr 1.5fr 1.5fr 1fr 80px;gap:10px}
+.rpt-name{font-weight:600;color:var(--text);font-size:13px}
+.rpt-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.rpt-summary{display:flex;gap:16px;flex-wrap:wrap;padding:10px 16px;background:var(--s2);border-top:1px solid var(--border);font-size:12px;color:var(--text2)}
+.rpt-summary strong{color:var(--text)}
+
+@media print{
+  .topbar,.tabs,.controls,.rpt-controls,.btn,.tb-btn,#load-state,#err-banner{display:none!important}
+  body{background:#fff;font-size:11px}
+  .main{padding:0}
+  #wrap-reporte{display:block!important}
+  #wrap-main,#wrap-arc,#wrap-kpi{display:none!important}
+  .rpt-section{break-inside:avoid}
+}
 
 /* ── KPI cards ──────────────────────────────────── */
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:20px}
@@ -229,6 +261,7 @@ td{padding:10px 14px;vertical-align:middle}
     <button class="tab active" id="tab-main" onclick="switchTab('main')">En proceso <span class="tab-badge" id="cnt-main">0</span></button>
     <button class="tab" id="tab-arc" onclick="switchTab('arc')">Archivados <span class="tab-badge" id="cnt-arc">0</span></button>
     <button class="tab" id="tab-kpi" onclick="switchTab('kpi')">KPIs</button>
+    <button class="tab" id="tab-reporte" onclick="switchTab('reporte')">Reportes</button>
   </div>
 
   <div id="load-state"><div class="spinner"></div>Cargando datos...</div>
@@ -291,10 +324,53 @@ td{padding:10px 14px;vertical-align:middle}
     <div class="kpi-grid" id="kpi-grid"></div>
     <div class="tbl-wrap">
       <table>
-        <thead><tr><th>#</th><th>Etapa</th><th>En curso</th><th>Completados</th><th>Archivados aquí</th><th>WA enviados</th></tr></thead>
+        <thead><tr><th>#</th><th>Etapa</th><th>SLA</th><th>En curso</th><th>Completados</th><th>Archivados aquí</th><th>WA enviados</th></tr></thead>
         <tbody id="tbody-kpi"></tbody>
       </table>
     </div>
+  </div>
+
+  <!-- REPORTE TAB -->
+  <div id="wrap-reporte" style="display:none">
+    <div class="rpt-controls">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Agrupar por</label>
+        <select id="rGrupo" onchange="renderReporte()" style="font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--surface);color:var(--text)">
+          <option value="proyecto">Proyecto</option>
+          <option value="mandante">Mandante</option>
+          <option value="estado">Estado / Etapa</option>
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Proyecto</label>
+        <select id="rFiltroProyecto" onchange="renderReporte()" style="font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--surface);color:var(--text);min-width:160px">
+          <option value="">Todos</option>
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Estado</label>
+        <select id="rFiltroEstado" onchange="renderReporte()" style="font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--surface);color:var(--text)">
+          <option value="">Todos</option>
+          <option value="EnProceso">En proceso</option>
+          <option value="Archivado">Archivados</option>
+          <option value="Contratado">Contratados</option>
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Semáforo</label>
+        <select id="rFiltroSLA" onchange="renderReporte()" style="font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--surface);color:var(--text)">
+          <option value="">Todos</option>
+          <option value="rojo">🔴 Fuera de SLA</option>
+          <option value="amarillo">🟡 Por vencer</option>
+          <option value="verde">🟢 En plazo</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:6px;align-items:flex-end">
+        <button class="btn sm primary" onclick="window.print()">🖨 PDF</button>
+        <button class="btn sm" onclick="exportReporte()">⬇ Excel</button>
+      </div>
+    </div>
+    <div id="reporte-content"></div>
   </div>
 </div>
 
@@ -311,7 +387,7 @@ td{padding:10px 14px;vertical-align:middle}
 // ═══════════════════════════════════════════════
 const MSAL_CONFIG = {
   auth:{
-    clientId:'6d760992-6ec3-4500-af9a-6c23a720e941',
+    clientId:'10ea257d-8403-48e1-826f-e43bd602c8ba',
     authority:'https://login.microsoftonline.com/0f9d409d-ee96-4820-a8bc-b837b2d74995',
     redirectUri:window.location.origin+window.location.pathname,
   },
@@ -330,17 +406,17 @@ let WA_CFG = JSON.parse(localStorage.getItem(WA_KEY)||'{"mode":"web","firma":"Eq
 // ETAPAS DEL PROCESO
 // ═══════════════════════════════════════════════
 const ETAPAS = [
-  {n:1,  key:'solicitud',    fase:'pre', label:'Solicitud de requerimiento',       resp:'Analista Reclutamiento',  waKey:'disponibilidad', condicional:false},
-  {n:2,  key:'grafologico',  fase:'val', label:'Test grafológico',                 resp:'Analista Reclutamiento',  waKey:'grafologico',    condicional:false},
-  {n:3,  key:'chapi',        fase:'val', label:'Antecedentes legales',             resp:'Analista Reclutamiento',  waKey:null,             condicional:false},
-  {n:4,  key:'examen',       fase:'med', label:'Examen médico preocupacional',      resp:'Analista Reclutamiento',  waKey:'examen',         condicional:false},
-  {n:5,  key:'carta',        fase:'inc', label:'Carta de oferta',                  resp:'RRHH / Analista',         waKey:'carta',          condicional:false},
-  {n:6,  key:'carga',        fase:'inc', label:'Carga de cursos en plataforma',    resp:'Analista Reclutamiento',  waKey:null,             condicional:false},
-  {n:7,  key:'cursos_acred', fase:'inc', label:'Cursos de acreditación',           resp:'Candidato / RRHH',        waKey:'cursos',         condicional:false},
-  {n:8,  key:'cursos_hab',   fase:'inc', label:'Cursos de habilitación de trabajo',resp:'Candidato / RRHH',        waKey:null,             condicional:false},
-  {n:9,  key:'mod3d',        fase:'inc', label:'Módulo 3D',                        resp:'Candidato / RRHH',        waKey:null,             condicional:true },
-  {n:10, key:'nivelacion',   fase:'inc', label:'Nivelación',                       resp:'Candidato / RRHH',        waKey:null,             condicional:true },
-  {n:11, key:'contratacion', fase:'fin', label:'Contratación',                     resp:'RRHH → Contratación',     waKey:'ingreso',        condicional:false},
+  {n:1,  key:'solicitud',    fase:'pre', label:'Solicitud de requerimiento',       resp:'Analista Reclutamiento',  waKey:'disponibilidad', condicional:false, sla:2,  slaAmb:1},
+  {n:2,  key:'grafologico',  fase:'val', label:'Test grafológico',                 resp:'Analista Reclutamiento',  waKey:'grafologico',    condicional:false, sla:7,  slaAmb:5},
+  {n:3,  key:'chapi',        fase:'val', label:'Antecedentes legales',             resp:'Analista Reclutamiento',  waKey:null,             condicional:false, sla:3,  slaAmb:2},
+  {n:4,  key:'examen',       fase:'med', label:'Examen médico preocupacional',     resp:'Analista Reclutamiento',  waKey:'examen',         condicional:false, sla:7,  slaAmb:5},
+  {n:5,  key:'carta',        fase:'inc', label:'Carta de oferta',                  resp:'RRHH / Analista',         waKey:'carta',          condicional:false, sla:3,  slaAmb:2},
+  {n:6,  key:'carga',        fase:'inc', label:'Carga de cursos en plataforma',    resp:'Analista Reclutamiento',  waKey:null,             condicional:false, sla:2,  slaAmb:1},
+  {n:7,  key:'cursos_acred', fase:'inc', label:'Cursos de acreditación',           resp:'Candidato / RRHH',        waKey:'cursos',         condicional:false, sla:14, slaAmb:10},
+  {n:8,  key:'cursos_hab',   fase:'inc', label:'Cursos de habilitación de trabajo',resp:'Candidato / RRHH',        waKey:null,             condicional:false, sla:14, slaAmb:10},
+  {n:9,  key:'mod3d',        fase:'inc', label:'Módulo 3D',                        resp:'Candidato / RRHH',        waKey:null,             condicional:true,  sla:7,  slaAmb:5},
+  {n:10, key:'nivelacion',   fase:'inc', label:'Nivelación',                       resp:'Candidato / RRHH',        waKey:null,             condicional:true,  sla:7,  slaAmb:5},
+  {n:11, key:'contratacion', fase:'fin', label:'Contratación',                     resp:'RRHH → Contratación',     waKey:'ingreso',        condicional:false, sla:3,  slaAmb:2},
 ];
 const FASES = {
   pre:{label:'Pre-ingreso',    color:'#1d4ed8',bg:'#dbeafe'},
@@ -501,7 +577,27 @@ async function spDelete(list,id){
 // ═══════════════════════════════════════════════
 // SP MAPPING
 // ═══════════════════════════════════════════════
-const SP_SEL = 'Id,Nombre,Cargo,Proyecto,Mandante,SolicitadoPor,FechaSolicitud,Telefono,Disponible,Etapa,Estado,MotivoArchivo,FechaArchivo,FechaGrafologico,ResultadoGrafologico,ResultadoChapi,FechaExamen,ResultadoExamen,FechaCartaOferta,RespuestaCartaOferta,CargaCursos,CursosAcreditacion,CursosHabilitacion,Modulo3D,Fecha3D,Resultado3D,Nivelacion,FechaContratacion,WaLog,DiasEnEtapa';
+const SP_SEL = 'Id,Nombre,Cargo,Proyecto,Mandante,SolicitadoPor,FechaSolicitud,Telefono,Disponible,Etapa,Estado,MotivoArchivo,FechaArchivo,FechaGrafologico,ResultadoGrafologico,ResultadoChapi,FechaExamen,ResultadoExamen,FechaCartaOferta,RespuestaCartaOferta,CargaCursos,CursosAcreditacion,CursosHabilitacion,Modulo3D,Fecha3D,Resultado3D,Nivelacion,FechaContratacion,WaLog,DiasEnEtapa,FechaInicioEtapa';
+
+// Semáforo SLA
+function getSemaforo(p) {
+  if(p.estado !== 'EnProceso') return null;
+  const ei = Math.min(p.etapa, ETAPAS.length-1);
+  const e = ETAPAS[ei];
+  // Calcular días en etapa actual
+  const ref = p.fechaInicioEtapa || p.fechaSolicitud;
+  if(!ref) return null;
+  const ini = new Date(ref+'T00:00:00');
+  const dias = Math.max(0, Math.floor((new Date() - ini) / 864e5));
+  if(dias > e.sla)        return { color:'rojo',    dias, sla:e.sla, label:`${dias}d / SLA ${e.sla}d` };
+  if(dias >= e.slaAmb)    return { color:'amarillo', dias, sla:e.sla, label:`${dias}d / SLA ${e.sla}d` };
+  return                         { color:'verde',    dias, sla:e.sla, label:`${dias}d / SLA ${e.sla}d` };
+}
+function semaforoHtml(p) {
+  const s = getSemaforo(p);
+  if(!s) return '<span style="font-size:11px;color:var(--text3)">—</span>';
+  return `<div class="sla-cell"><span class="sla-dot ${s.color}"></span><span class="sla-dias ${s.color}">${s.dias}d</span><span class="sla-lbl">/ ${s.sla}d</span></div>`;
+}
 
 function spToP(i){return{
   id:i.Id,spId:i.Id,nombre:i.Nombre||'',cargo:i.Cargo||'',proyecto:i.Proyecto||'',
@@ -510,6 +606,7 @@ function spToP(i){return{
   telefono:i.Telefono||'',disponible:i.Disponible||'',
   etapa:i.Etapa||0,estado:i.Estado||'EnProceso',
   motivoArchivo:i.MotivoArchivo||'',fechaArchivo:i.FechaArchivo?i.FechaArchivo.slice(0,10):'',
+  fechaInicioEtapa:i.FechaInicioEtapa?i.FechaInicioEtapa.slice(0,10):'',
   fechaGrafologico:i.FechaGrafologico?i.FechaGrafologico.slice(0,10):'',
   resultadoGrafologico:i.ResultadoGrafologico||'',resultadoChapi:i.ResultadoChapi||'',
   fechaExamen:i.FechaExamen?i.FechaExamen.slice(0,10):'',resultadoExamen:i.ResultadoExamen||'',
@@ -528,6 +625,7 @@ function pToSp(p){return{
   SolicitadoPor:p.solicitadoPor||'',FechaSolicitud:p.fechaSolicitud||null,
   Telefono:p.telefono||'',Disponible:p.disponible||'',
   Etapa:+p.etapa||0,Estado:p.estado||'EnProceso',
+  FechaInicioEtapa:p.fechaInicioEtapa||null,
   MotivoArchivo:p.motivoArchivo||'',FechaArchivo:p.fechaArchivo||null,
   FechaGrafologico:p.fechaGrafologico||null,ResultadoGrafologico:p.resultadoGrafologico||'',
   ResultadoChapi:p.resultadoChapi||'',FechaExamen:p.fechaExamen||null,
@@ -734,7 +832,6 @@ function render(){
     const hasWA=e?.waKey;
     const waTd=hasWA?`<button class="btn xs wa" onclick="openWAStep(${p.id},${ei});event.stopPropagation()" title="Enviar WhatsApp — ${escH(e.label)}">💬${nw>0?` ${nw}`:''}</button>`:`<span style="font-size:11px;color:var(--text3)">—</span>`;
     const f=FASES[e?.fase||'pre'];
-    const diasTxt=p.diasEnEtapa>0?`<span class="dias-sla" title="Días en esta etapa">${p.diasEnEtapa}d</span>`:'<span style="font-size:11px;color:var(--text3)">—</span>';
     return`<tr onclick="openDetail(${p.id})">
       <td><div class="cname">${escH(p.nombre)}</div><div class="csub">📱 ${p.telefono?escH(p.telefono):'Sin teléfono'}</div></td>
       <td><div style="font-size:13px;font-weight:500">${escH(p.cargo)}</div><div class="csub">${escH(p.proyecto)} · Sol. ${escH(p.solicitadoPor)}</div></td>
@@ -743,7 +840,7 @@ function render(){
         <div style="font-size:12px;font-weight:600">${ei+1}. ${escH(e.label)}</div>
       </td>
       <td><div class="prog">${dots}</div><div style="font-size:10px;color:var(--text3);margin-top:3px">${p.etapa+1} / ${ETAPAS.length}</div></td>
-      <td>${diasTxt}</td>
+      <td>${semaforoHtml(p)}</td>
       <td>${p.disponible?`<span class="badge ${p.disponible==='Si'?'green':p.disponible==='No'?'red':'gray'}">${escH(p.disponible)}</span>`:'<span class="badge gray">—</span>'}</td>
       <td onclick="event.stopPropagation()">${waTd}</td>
     </tr>`;
@@ -780,26 +877,122 @@ function renderKPI(){
   const contrat=persons.filter(p=>p.estado==='Contratado');
   const archiv=persons.filter(p=>p.estado==='Archivado');
   const waTotal=persons.reduce((s,p)=>s+countWA(p),0);
+  const fuera=activos.filter(p=>getSemaforo(p)?.color==='rojo').length;
   document.getElementById('kpi-grid').innerHTML=`
-    <div class="kpi"><div class="kpi-label">Total candidatos gestionados</div><div class="kpi-value">${persons.length}</div></div>
-    <div class="kpi"><div class="kpi-label">Tasa de contratación</div><div class="kpi-value">${persons.length?Math.round(contrat.length/persons.length*100):0}%</div></div>
-    <div class="kpi kpi-red"><div class="kpi-label">Tasa de descarte</div><div class="kpi-value">${persons.length?Math.round(archiv.length/persons.length*100):0}%</div></div>
-    <div class="kpi kpi-wa"><div class="kpi-label">WA enviados total</div><div class="kpi-value">${waTotal}</div></div>
-    <div class="kpi kpi-amber"><div class="kpi-label">Proyectos activos</div><div class="kpi-value">${new Set(activos.map(p=>p.proyecto)).size}</div></div>`;
+    <div class="kpi"><div class="kpi-label">Total candidatos</div><div class="kpi-value">${persons.length}</div></div>
+    <div class="kpi"><div class="kpi-label">Tasa contratación</div><div class="kpi-value">${persons.length?Math.round(contrat.length/persons.length*100):0}%</div></div>
+    <div class="kpi kpi-red"><div class="kpi-label">Fuera de SLA 🔴</div><div class="kpi-value" style="color:var(--red)">${fuera}</div></div>
+    <div class="kpi kpi-amber"><div class="kpi-label">Tasa descarte</div><div class="kpi-value">${persons.length?Math.round(archiv.length/persons.length*100):0}%</div></div>
+    <div class="kpi kpi-wa"><div class="kpi-label">WA enviados</div><div class="kpi-value">${waTotal}</div></div>
+    <div class="kpi"><div class="kpi-label">Proyectos activos</div><div class="kpi-value">${new Set(activos.map(p=>p.proyecto)).size}</div></div>`;
   document.getElementById('tbody-kpi').innerHTML=ETAPAS.map((e,idx)=>{
     const enCurso=persons.filter(p=>p.estado==='EnProceso'&&p.etapa===idx).length;
     const complet=persons.filter(p=>p.etapa>idx||p.estado==='Contratado').length;
     const arcHere=persons.filter(p=>p.estado==='Archivado'&&p.etapa===idx).length;
     const waCount=persons.reduce((s,p)=>s+((p.waLog||{})[String(idx)]?.length||0),0);
+    const fueraAqui=persons.filter(p=>p.estado==='EnProceso'&&p.etapa===idx&&getSemaforo(p)?.color==='rojo').length;
     return`<tr>
       <td style="font-size:12px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text3)">${e.n}</td>
       <td style="font-size:12px;font-weight:600">${escH(e.label)}${e.condicional?` <span class="badge gray" style="font-size:10px">Condicional</span>`:''}</td>
-      <td style="font-size:14px;font-weight:700;font-family:'DM Mono',monospace">${enCurso}</td>
+      <td style="font-size:12px;color:var(--text3)">${e.sla}d</td>
+      <td style="font-size:14px;font-weight:700;font-family:'DM Mono',monospace">${enCurso}${fueraAqui>0?` <span style="color:var(--red);font-size:11px">🔴 ${fueraAqui}</span>`:''}</td>
       <td style="font-size:14px;font-weight:700;font-family:'DM Mono',monospace;color:var(--green)">${complet}</td>
       <td style="font-size:14px;font-weight:700;font-family:'DM Mono',monospace;color:${arcHere>0?'var(--red)':'var(--text3)'}">${arcHere}</td>
       <td style="font-size:13px;color:${waCount>0?'var(--wad)':'var(--text3)'}${waCount>0?';font-weight:600':''}">${waCount>0?'💬 '+waCount:e.waKey?'0':'—'}</td>
     </tr>`;
   }).join('');
+}
+
+// ═══════════════════════════════════════════════
+// REPORTE
+// ═══════════════════════════════════════════════
+function getReporteFiltered(){
+  const fp=document.getElementById('rFiltroProyecto')?.value||'';
+  const fe=document.getElementById('rFiltroEstado')?.value||'';
+  const fs=document.getElementById('rFiltroSLA')?.value||'';
+  return persons.filter(p=>{
+    if(fp&&p.proyecto!==fp) return false;
+    if(fe&&p.estado!==fe) return false;
+    if(fs&&getSemaforo(p)?.color!==fs) return false;
+    return true;
+  });
+}
+
+function renderReporte(){
+  const grupo=document.getElementById('rGrupo')?.value||'proyecto';
+  const list=getReporteFiltered();
+  // Fill proyecto filter options
+  const projs=[...new Set(persons.map(p=>p.proyecto))].sort();
+  const sel=document.getElementById('rFiltroProyecto');
+  if(sel&&sel.options.length<=1){projs.forEach(x=>{const o=document.createElement('option');o.value=x;o.textContent=x;sel.appendChild(o);});}
+  const cont=document.getElementById('reporte-content');
+  if(!list.length){cont.innerHTML='<div style="text-align:center;padding:3rem;color:var(--text3);font-size:13px">Sin resultados con los filtros seleccionados.</div>';return;}
+  const grupos={};
+  list.forEach(p=>{
+    let key='';
+    if(grupo==='proyecto') key=p.proyecto||'Sin proyecto';
+    else if(grupo==='mandante') key=p.mandante||'Sin mandante';
+    else key=`Etapa ${p.etapa+1}: ${ETAPAS[Math.min(p.etapa,ETAPAS.length-1)]?.label||''}`;
+    if(!grupos[key]) grupos[key]=[];
+    grupos[key].push(p);
+  });
+  const totRojo=list.filter(p=>getSemaforo(p)?.color==='rojo').length;
+  const totAmb=list.filter(p=>getSemaforo(p)?.color==='amarillo').length;
+  const totContr=list.filter(p=>p.estado==='Contratado').length;
+  const totArc=list.filter(p=>p.estado==='Archivado').length;
+  let html=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:16px;display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+    <div style="font-size:14px;font-weight:700">Reporte Reclutamiento · BHP</div>
+    <div style="font-size:12px;color:var(--text3)">${new Date().toLocaleDateString('es-CL')}</div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-left:auto;font-size:12px">
+      <span>Total: <strong>${list.length}</strong></span>
+      <span>En proceso: <strong>${list.filter(p=>p.estado==='EnProceso').length}</strong></span>
+      <span>Contratados: <strong style="color:var(--green)">${totContr}</strong></span>
+      <span>Archivados: <strong style="color:var(--red)">${totArc}</strong></span>
+      ${totRojo>0?`<span>🔴 Fuera SLA: <strong style="color:var(--red)">${totRojo}</strong></span>`:''}
+      ${totAmb>0?`<span>🟡 Por vencer: <strong style="color:var(--amber)">${totAmb}</strong></span>`:''}
+    </div>
+  </div>`;
+  Object.entries(grupos).sort(([a],[b])=>a.localeCompare(b)).forEach(([key,plist])=>{
+    const gRojo=plist.filter(p=>getSemaforo(p)?.color==='rojo').length;
+    const gAmb=plist.filter(p=>getSemaforo(p)?.color==='amarillo').length;
+    html+=`<div class="rpt-section">
+      <div class="rpt-section-head">
+        <div><div class="rpt-section-title">${escH(key)}</div>
+        <div class="rpt-section-sub">${plist.length} candidato(s)${gRojo>0?` · 🔴 ${gRojo} fuera de SLA`:''}${gAmb>0?` · 🟡 ${gAmb} por vencer`:''}</div></div>
+      </div>
+      <div class="rpt-head"><span>Candidato</span><span>Etapa actual</span><span>Estado</span><span>SLA</span><span>WA</span></div>`;
+    plist.forEach(p=>{
+      const ei=Math.min(p.etapa,ETAPAS.length-1),e=ETAPAS[ei];
+      const f=FASES[e?.fase||'pre'];
+      const s=getSemaforo(p);
+      const slaHtml=s?`<div class="sla-cell"><span class="sla-dot ${s.color}"></span><span class="sla-dias ${s.color}">${s.dias}d</span><span class="sla-lbl">/ ${s.sla}d</span></div>`:'<span style="font-size:11px;color:var(--text3)">—</span>';
+      const sc=p.estado==='Contratado'?'green':p.estado==='Archivado'?'red':'amber';
+      const sl=p.estado==='Contratado'?'Contratado':p.estado==='Archivado'?'Archivado':'En proceso';
+      const nw=countWA(p);
+      html+=`<div class="rpt-row">
+        <div><div class="rpt-name">${escH(p.nombre)}</div><div class="rpt-sub">${escH(p.cargo)} · ${escH(p.solicitadoPor)}</div></div>
+        <div><div style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:700;background:${f.bg};color:${f.color}">${f.label}</div><div style="font-size:12px;margin-top:2px">${ei+1}. ${escH(e.label)}</div></div>
+        <div><span class="badge ${sc}">${sl}</span>${p.estado==='Archivado'&&p.motivoArchivo?`<div class="rpt-sub" style="margin-top:3px">${escH(p.motivoArchivo)}</div>`:''}</div>
+        <div>${slaHtml}</div>
+        <div style="font-size:12px;color:${nw>0?'var(--wad)':'var(--text3)'}">${nw>0?`💬 ${nw}`:'—'}</div>
+      </div>`;
+    });
+    html+='</div>';
+  });
+  cont.innerHTML=html;
+}
+
+function exportReporte(){
+  const list=getReporteFiltered();
+  const h=['Nombre','Cargo','Proyecto','Mandante','Solicitado por','Fecha solicitud','Estado','Nro Etapa','Etapa','Días etapa','SLA días','Semáforo','Motivo archivo','WA enviados'];
+  const rows=list.map(p=>{
+    const ei=Math.min(p.etapa,ETAPAS.length-1),e=ETAPAS[ei];
+    const s=getSemaforo(p);
+    return[p.nombre,p.cargo,p.proyecto,p.mandante,p.solicitadoPor,p.fechaSolicitud,p.estado,p.etapa+1,e.label,s?s.dias:'—',e.sla,s?({verde:'Verde',amarillo:'Amarillo',rojo:'Rojo'}[s.color]||s.color):'—',p.motivoArchivo||'',countWA(p)];
+  });
+  const csv=[h,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(';')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));
+  a.download=`reporte_reclutamiento_${new Date().toISOString().slice(0,10)}.csv`;a.click();
 }
 
 // ═══════════════════════════════════════════════
@@ -977,7 +1170,8 @@ async function delCmt(pid,idx,spId){
 async function avanzar(id){
   const p=persons.find(x=>x.id===id); if(!p||p.etapa>=ETAPAS.length-1) return;
   const prev=p.etapa; p.etapa++; p.diasEnEtapa=0;
-  try{await spPatch(LIST_CAND,p.spId,{Etapa:p.etapa,DiasEnEtapa:0});renderDetail(p);render();}
+  p.fechaInicioEtapa=new Date().toISOString().slice(0,10);
+  try{await spPatch(LIST_CAND,p.spId,{Etapa:p.etapa,DiasEnEtapa:0,FechaInicioEtapa:p.fechaInicioEtapa});renderDetail(p);render();}
   catch(e){alert('Error: '+e.message);p.etapa=prev;}
 }
 async function contratar(id){
@@ -1119,12 +1313,13 @@ function openEmail(){
 // ═══════════════════════════════════════════════
 function switchTab(t){showWrap(t);}
 function showWrap(t){
-  ['main','arc','kpi'].forEach(x=>{
+  ['main','arc','kpi','reporte'].forEach(x=>{
     document.getElementById('wrap-'+x).style.display=x===t?'block':'none';
     document.getElementById('tab-'+x).classList.toggle('active',x===t);
   });
   if(t==='kpi') renderKPI();
   if(t==='arc') renderArc();
+  if(t==='reporte') renderReporte();
 }
 
 function closeModal(){document.getElementById('modal-bg').style.display='none';openSteps={};}
