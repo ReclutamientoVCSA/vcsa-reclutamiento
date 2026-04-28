@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VCSA · Reclutamiento BHP</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="msal-browser.min.js"></script>
+<style>
+:root{
+  --bg:#F5F3EF;--surface:#FFFFFF;--s2:#F9F8F5;--s3:#F0EEE8;
+  --border:#E3E0D6;--border2:#C6C3B8;
+  --text:#1A1816;--text2:#6A6760;--text3:#9A9790;
+  --green:#16A34A;--gl:#DCFCE7;--gm:#86EFAC;
+  --amber:#D97706;--al:#FEF3C7;--am:#FCD34D;
+  --red:#DC2626;--rl:#FEE2E2;--rm:#FCA5A5;
+  --blue:#2563EB;--bl:#DBEAFE;
+  --purple:#7C3AED;--pl:#EDE9FE;
+  --wa:#25D366;--wad:#128C4E;--wal:#E7FEF0;
+  --r:10px;--rl2:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Figtree',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
+
+/* ── Topbar ─────────────────────────────────────── */
+.topbar{background:var(--text);color:#fff;height:54px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:100}
+.tb-brand{display:flex;align-items:center;gap:10px}
+.tb-logo{font-weight:700;font-size:15px;letter-spacing:-.02em}
+.tb-sep{width:1px;height:18px;background:#2e2c28}
+.tb-sub{font-size:12px;color:#888;font-weight:300}
+.tb-actions{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.tb-btn{padding:5px 12px;border-radius:7px;border:1px solid #333;background:transparent;color:#bbb;cursor:pointer;font-size:12px;font-family:inherit;font-weight:500;transition:all .12s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.tb-btn:hover{background:#222;border-color:#555;color:#fff}
+.tb-btn.accent{background:var(--green);border-color:var(--green);color:#fff}
+.tb-btn.accent:hover{background:#15803d}
+.tb-btn.wa-btn{background:var(--wa);border-color:var(--wa);color:#fff}
+.tb-btn.wa-btn:hover{background:var(--wad)}
+.conn{display:flex;align-items:center;gap:5px}
+.cdot{width:7px;height:7px;border-radius:50%;background:#444;transition:background .3s}
+.cdot.ok{background:#4ade80}.cdot.err{background:#f87171}
+.clbl{font-size:11px;color:#777}
+
+/* ── Buttons ────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border2);background:var(--surface);color:var(--text);transition:all .12s;font-family:inherit;white-space:nowrap}
+.btn:hover{background:var(--s3)}.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.primary{background:var(--text);border-color:var(--text);color:#fff}.btn.primary:hover{background:#2d2b27}
+.btn.green{background:var(--green);border-color:var(--green);color:#fff}.btn.green:hover{background:#15803d}
+.btn.wa{background:var(--wa);border-color:var(--wa);color:#fff}.btn.wa:hover{background:var(--wad)}
+.btn.amber{background:var(--amber);border-color:var(--amber);color:#fff}.btn.amber:hover{background:#b45309}
+.btn.ghost{border-color:transparent;background:transparent}.btn.ghost:hover{background:var(--s3)}
+.btn.danger{color:var(--red);border-color:var(--rm)}.btn.danger:hover{background:var(--rl)}
+.btn.sm{padding:5px 11px;font-size:12px}.btn.xs{padding:3px 8px;font-size:11px}.btn.icon{padding:6px;border-radius:7px}
+
+/* ── Main ───────────────────────────────────────── */
+.main{max-width:1340px;margin:0 auto;padding:20px 24px}
+
+/* ── Tabs ───────────────────────────────────────── */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px}
+.tab{padding:9px 18px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .12s;font-family:inherit;display:flex;align-items:center;gap:6px}
+.tab:hover{color:var(--text)}.tab.active{color:var(--text);border-bottom-color:var(--text)}
+.tab-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 4px;border-radius:99px;font-size:10px;font-weight:700;background:var(--s3);color:var(--text3)}
+.tab.active .tab-badge{background:var(--text);color:#fff}
+
+/* ── Metrics ────────────────────────────────────── */
+.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
+@media(max-width:900px){.metrics{grid-template-columns:repeat(2,1fr)}}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;border-top:3px solid var(--border)}
+.metric.m-green{border-top-color:var(--green)}.metric.m-amber{border-top-color:var(--amber)}
+.metric.m-red{border-top-color:var(--red)}.metric.m-wa{border-top-color:var(--wa)}
+.metric-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;font-weight:600}
+.metric-value{font-size:28px;font-weight:700;line-height:1;font-family:'DM Mono',monospace}
+.metric-value.green{color:var(--green)}.metric-value.amber{color:var(--amber)}.metric-value.red{color:var(--red)}.metric-value.wa{color:var(--wad)}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:4px}
+
+/* ── Controls ───────────────────────────────────── */
+.controls{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.controls select,.controls input[type=text]{font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--surface);color:var(--text);min-width:130px}
+
+/* ── Progress dots ──────────────────────────────── */
+.prog{display:flex;gap:2px;align-items:center}
+.pdot{width:8px;height:8px;border-radius:2px;background:var(--border);flex-shrink:0;transition:background .2s}
+.pdot.done{background:var(--green)}.pdot.active{background:var(--amber)}.pdot.archived{background:var(--red)}.pdot.skip{background:var(--border2);opacity:.4}
+
+/* ── Badges ─────────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:500;white-space:nowrap}
+.badge.green{background:var(--gl);color:#15803d}.badge.amber{background:var(--al);color:#92400e}
+.badge.red{background:var(--rl);color:#991b1b}.badge.blue{background:var(--bl);color:#1d4ed8}
+.badge.purple{background:var(--pl);color:#5b21b6}.badge.gray{background:var(--s3);color:var(--text2)}
+.badge.wa{background:var(--wal);color:var(--wad)}
+
+/* ── Table ──────────────────────────────────────── */
+.tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl2);overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:var(--s2);padding:9px 14px;text-align:left;font-weight:700;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border)}
+tbody tr{border-bottom:1px solid var(--border);cursor:pointer;transition:background .08s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--s2)}
+td{padding:10px 14px;vertical-align:middle}
+.cname{font-weight:600;font-size:13px}
+.csub{font-size:11px;color:var(--text3);margin-top:2px}
+.dias-sla{font-size:12px;font-weight:600;font-family:'DM Mono',monospace}
+.empty-row{text-align:center;padding:2.5rem 1rem;color:var(--text3);font-size:13px}
+
+/* ── Archive banner ─────────────────────────────── */
+.arc-reason{font-size:11px;padding:2px 7px;border-radius:99px;background:var(--rl);color:#991b1b;font-weight:500}
+
+/* ── KPI cards ──────────────────────────────────── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:20px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;border-left:3px solid var(--green)}
+.kpi.kpi-wa{border-left-color:var(--wa)}.kpi.kpi-red{border-left-color:var(--red)}.kpi.kpi-amber{border-left-color:var(--amber)}
+.kpi-label{font-size:11px;color:var(--text3);margin-bottom:4px}
+.kpi-value{font-size:22px;font-weight:700;font-family:'DM Mono',monospace}
+
+/* ── Modal ──────────────────────────────────────── */
+.modal-bg{position:fixed;inset:0;background:rgba(15,13,10,.55);display:flex;align-items:flex-start;justify-content:center;z-index:200;padding:28px 16px;overflow-y:auto;backdrop-filter:blur(3px)}
+.modal{background:var(--surface);border-radius:var(--rl2);border:1px solid var(--border);width:100%;max-width:840px;box-shadow:0 20px 60px rgba(0,0,0,.18);overflow:hidden}
+.modal-head{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;background:var(--s2)}
+.modal-title{font-size:16px;font-weight:700}
+.modal-meta{font-size:11px;color:var(--text3);margin-top:3px}
+.modal-body{padding:20px 24px;max-height:74vh;overflow-y:auto}
+.modal-foot{padding:14px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+
+/* ── Forms ──────────────────────────────────────── */
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.fg label{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
+.fg input,.fg select,.fg textarea{font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--surface);color:var(--text)}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:2px solid var(--text);outline-offset:1px}
+.fg textarea{resize:vertical;min-height:70px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-sec{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--border);padding-bottom:5px;margin:18px 0 12px}
+@media(max-width:500px){.form-row{grid-template-columns:1fr}}
+
+/* ── Pipeline ───────────────────────────────────── */
+.pipe-phase{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:4px 10px;margin:10px 0 4px;border-radius:4px}
+.pipe-step{border-radius:8px;margin-bottom:4px;overflow:hidden}
+.pipe-head{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;user-select:none}
+.s-done .pipe-head{background:#f0fdf4}
+.s-active .pipe-head{background:#fffbeb;border:1px solid var(--am);border-bottom:none;border-radius:8px 8px 0 0}
+.s-pending .pipe-head{background:var(--s3)}
+.s-archived .pipe-head{background:var(--rl)}
+.s-skipped .pipe-head{background:var(--s3);opacity:.55}
+.pipe-num{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.s-done .pipe-num{background:var(--green);color:#fff}
+.s-active .pipe-num{background:var(--amber);color:#fff}
+.s-pending .pipe-num{background:var(--border2);color:var(--text3)}
+.s-archived .pipe-num{background:var(--red);color:#fff}
+.s-skipped .pipe-num{background:var(--border);color:var(--text3)}
+.pipe-name{flex:1;font-size:12px;font-weight:600}
+.pipe-stat{font-size:10px;font-weight:700;white-space:nowrap}
+.s-done .pipe-stat{color:var(--green)}.s-active .pipe-stat{color:var(--amber)}.s-archived .pipe-stat{color:var(--red)}
+.pipe-arrow{font-size:10px;color:var(--text3);transition:transform .15s;flex-shrink:0}
+.pipe-arrow.open{transform:rotate(180deg)}
+.pipe-body{padding:10px 12px 12px 42px}
+.s-done .pipe-body{background:#f0fdf4;border-top:1px solid #bbf7d0}
+.s-active .pipe-body{background:#fffdf5;border:1px solid var(--am);border-top:none}
+.s-archived .pipe-body{background:#fff8f8;border:1px solid var(--rm);border-top:none}
+.s-pending .pipe-body{background:var(--s3);border-top:1px solid var(--border)}
+.s-skipped .pipe-body{background:var(--s3);border-top:1px solid var(--border);opacity:.55}
+.rrow{display:flex;gap:8px;align-items:center;margin-bottom:7px;flex-wrap:wrap}
+.rrow label{font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.04em;min-width:90px;flex-shrink:0}
+.rrow select,.rrow input[type=date],.rrow input[type=text]{font-family:inherit;font-size:12px;padding:5px 8px;border:1px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text)}
+.pipe-cond-skip{font-size:11px;color:var(--text3);font-style:italic}
+
+/* ── Comments ───────────────────────────────────── */
+.cmt-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.cmt{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:7px 10px}
+.cmt-meta{display:flex;justify-content:space-between;margin-bottom:3px}
+.cmt-author{font-size:11px;font-weight:700;color:var(--blue)}
+.cmt-date{font-size:10px;color:var(--text3)}
+.cmt-text{font-size:12px;line-height:1.5}
+.cmt-del{font-size:11px;color:var(--border2);cursor:pointer;background:none;border:none;font-family:inherit;margin-left:5px}
+.cmt-del:hover{color:var(--red)}
+.no-cmt{font-size:11px;color:var(--text3);font-style:italic;margin-bottom:7px}
+.cmt-input{display:flex;gap:6px;align-items:flex-start;margin-top:7px}
+.cmt-input input{flex:1;font-family:inherit;font-size:12px;padding:6px 8px;border:1px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text)}
+
+/* ── WA section ─────────────────────────────────── */
+.wa-sec{margin-top:10px;border-top:1px solid var(--border);padding-top:10px}
+.wa-sec-title{font-size:10px;font-weight:700;color:var(--wad);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
+.wa-textarea{font-family:'DM Mono',monospace;font-size:12px;padding:8px 10px;border:1px solid #a8e6bf;border-radius:7px;width:100%;resize:vertical;min-height:70px;background:var(--wal);color:var(--text);margin-bottom:6px}
+.wa-log-e{font-size:11px;padding:4px 8px;background:var(--wal);border-radius:5px;margin-bottom:3px;color:var(--text2)}
+.wa-phone-row{display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.wa-phone-row label{font-size:11px;color:var(--text3);white-space:nowrap;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.wa-phone-row input{font-family:inherit;font-size:13px;padding:6px 10px;border:1px solid var(--border2);border-radius:6px;flex:1;min-width:160px;background:var(--surface);color:var(--text)}
+
+/* ── States ─────────────────────────────────────── */
+#err-banner{background:var(--rl);border:1px solid var(--rm);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--red);display:none}
+#load-state{text-align:center;padding:3rem;color:var(--text3);display:none}
+.spinner{width:26px;height:26px;border:2px solid var(--border);border-top-color:var(--text);border-radius:50%;animation:spin .6s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+#msal-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:16px}
+.msal-logo{font-family:'Figtree',sans-serif;font-weight:700;font-size:28px;letter-spacing:-.03em;color:var(--text)}
+.msal-logo span{font-weight:300;color:var(--text3)}
+
+@media print{.topbar,.tabs,.controls,.btn,.tb-btn,.modal-bg,#load-state,#err-banner{display:none!important}body{background:#fff}}
+</style>
+</head>
+<body>
+
+<!-- MSAL loading screen -->
+<div id="msal-screen">
+  <div class="spinner"></div>
+  <div class="msal-logo">VCSA <span>·</span> Reclutamiento</div>
+  <div style="font-size:13px;color:var(--text3)" id="msal-msg">Iniciando sesión con Microsoft 365...</div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="tb-brand">
+    <span class="tb-logo">VCSA</span>
+    <div class="tb-sep"></div>
+    <span class="tb-sub">Reclutamiento BHP · <span class="cdot" id="cdot"></span><span id="clbl" class="clbl">Desconectado</span></span>
+  </div>
+  <div class="tb-actions">
+    <button class="tb-btn" onclick="recargar()">↻ Actualizar</button>
+    <button class="tb-btn" onclick="exportCSV()">⬇ Exportar</button>
+    <button class="tb-btn" onclick="openEmail()">✉ Correo</button>
+    <button class="tb-btn wa-btn" onclick="openWAConfig()">💬 WhatsApp</button>
+    <button class="tb-btn accent" onclick="openAdd()">+ Candidato</button>
+  </div>
+</div>
+
+<div class="main">
+  <div id="err-banner"></div>
+
+  <div class="tabs">
+    <button class="tab active" id="tab-main" onclick="switchTab('main')">En proceso <span class="tab-badge" id="cnt-main">0</span></button>
+    <button class="tab" id="tab-arc" onclick="switchTab('arc')">Archivados <span class="tab-badge" id="cnt-arc">0</span></button>
+    <button class="tab" id="tab-kpi" onclick="switchTab('kpi')">KPIs</button>
+  </div>
+
+  <div id="load-state"><div class="spinner"></div>Cargando datos...</div>
+
+  <!-- MAIN TAB -->
+  <div id="wrap-main" style="display:none">
+    <div class="metrics" id="metrics"></div>
+    <div class="controls">
+      <select id="fProyecto" onchange="render()"><option value="">Todos los proyectos</option></select>
+      <select id="fEtapa" onchange="render()">
+        <option value="">Todas las etapas</option>
+        <option value="0">1. Solicitud</option>
+        <option value="1">2. Test grafológico</option>
+        <option value="2">3. Antecedentes legales</option>
+        <option value="3">4. Examen médico</option>
+        <option value="4">5. Carta de oferta</option>
+        <option value="5">6. Carga de cursos</option>
+        <option value="6">7. Cursos acreditación</option>
+        <option value="7">8. Cursos habilitación</option>
+        <option value="8">9. Módulo 3D</option>
+        <option value="9">10. Nivelación</option>
+        <option value="10">11. Contratación</option>
+      </select>
+      <select id="fSolicitante" onchange="render()"><option value="">Todos los solicitantes</option></select>
+      <input type="text" id="fBuscar" placeholder="Buscar candidato o cargo..." oninput="render()" style="min-width:210px">
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Candidato</th><th>Cargo · Proyecto</th><th>Etapa actual</th>
+          <th>Progreso</th><th>Días etapa</th><th>Estado</th><th>WA</th>
+        </tr></thead>
+        <tbody id="tbody-main"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ARCHIVE TAB -->
+  <div id="wrap-arc" style="display:none">
+    <div style="margin-bottom:14px;display:flex;align-items:center;gap:8px">
+      <span style="font-size:13px;color:var(--text2)">Candidatos descartados en alguna etapa del proceso. Registro histórico de solo lectura.</span>
+    </div>
+    <div class="controls">
+      <select id="afProyecto" onchange="renderArc()"><option value="">Todos los proyectos</option></select>
+      <input type="text" id="afBuscar" placeholder="Buscar..." oninput="renderArc()" style="min-width:180px">
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Candidato</th><th>Cargo · Proyecto</th><th>Archivado en</th>
+          <th>Motivo</th><th>Solicitado por</th><th>Fecha solicitud</th><th>Ver</th>
+        </tr></thead>
+        <tbody id="tbody-arc"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- KPI TAB -->
+  <div id="wrap-kpi" style="display:none">
+    <div class="kpi-grid" id="kpi-grid"></div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Etapa</th><th>En curso</th><th>Completados</th><th>Archivados aquí</th><th>WA enviados</th></tr></thead>
+        <tbody id="tbody-kpi"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modal-bg" class="modal-bg" style="display:none" onclick="bgClose(event)">
+  <div class="modal" id="modal-box" onclick="event.stopPropagation()">
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// MSAL + SP CONFIG
+// ═══════════════════════════════════════════════
+const MSAL_CONFIG = {
+  auth:{
+    clientId:'6d760992-6ec3-4500-af9a-6c23a720e941',
+    authority:'https://login.microsoftonline.com/0f9d409d-ee96-4820-a8bc-b837b2d74995',
+    redirectUri:window.location.origin+window.location.pathname,
+  },
+  cache:{cacheLocation:'localStorage',storeAuthStateInCookie:true}
+};
+const SP_SCOPES = ['https://vecons.sharepoint.com/AllSites.FullControl'];
+const SITE_URL  = 'https://vecons.sharepoint.com/sites/RySCSA';
+const LIST_CAND = 'RyS_Candidatos';
+const LIST_CMT  = 'RyS_Comentarios';
+const WA_KEY    = 'vcsa_rys_wa';
+
+let msalInstance = null, accessToken = null;
+let WA_CFG = JSON.parse(localStorage.getItem(WA_KEY)||'{"mode":"web","firma":"Equipo RRHH — Vértice Construcciones S.A.","twilioSid":"","twilioToken":"","twilioFrom":""}');
+
+// ═══════════════════════════════════════════════
+// ETAPAS DEL PROCESO
+// ═══════════════════════════════════════════════
+const ETAPAS = [
+  {n:1,  key:'solicitud',    fase:'pre', label:'Solicitud de requerimiento',       resp:'Analista Reclutamiento',  waKey:'disponibilidad', condicional:false},
+  {n:2,  key:'grafologico',  fase:'val', label:'Test grafológico',                 resp:'Analista Reclutamiento',  waKey:'grafologico',    condicional:false},
+  {n:3,  key:'chapi',        fase:'val', label:'Antecedentes legales',             resp:'Analista Reclutamiento',  waKey:null,             condicional:false},
+  {n:4,  key:'examen',       fase:'med', label:'Examen médico preocupacional',      resp:'Analista Reclutamiento',  waKey:'examen',         condicional:false},
+  {n:5,  key:'carta',        fase:'inc', label:'Carta de oferta',                  resp:'RRHH / Analista',         waKey:'carta',          condicional:false},
+  {n:6,  key:'carga',        fase:'inc', label:'Carga de cursos en plataforma',    resp:'Analista Reclutamiento',  waKey:null,             condicional:false},
+  {n:7,  key:'cursos_acred', fase:'inc', label:'Cursos de acreditación',           resp:'Candidato / RRHH',        waKey:'cursos',         condicional:false},
+  {n:8,  key:'cursos_hab',   fase:'inc', label:'Cursos de habilitación de trabajo',resp:'Candidato / RRHH',        waKey:null,             condicional:false},
+  {n:9,  key:'mod3d',        fase:'inc', label:'Módulo 3D',                        resp:'Candidato / RRHH',        waKey:null,             condicional:true },
+  {n:10, key:'nivelacion',   fase:'inc', label:'Nivelación',                       resp:'Candidato / RRHH',        waKey:null,             condicional:true },
+  {n:11, key:'contratacion', fase:'fin', label:'Contratación',                     resp:'RRHH → Contratación',     waKey:'ingreso',        condicional:false},
+];
+const FASES = {
+  pre:{label:'Pre-ingreso',    color:'#1d4ed8',bg:'#dbeafe'},
+  val:{label:'Validación',     color:'#6d28d9',bg:'#ede9fe'},
+  med:{label:'Aptitud médica', color:'#0e7490',bg:'#cffafe'},
+  inc:{label:'Incorporación',  color:'#15803d',bg:'#dcfce7'},
+  fin:{label:'Contratación',   color:'#1a1816',bg:'#f0eeea'},
+};
+const MOTIVOS = [
+  'Grafológico no recomendado',
+  'Antecedentes legales rechazados',
+  'Examen médico contraindicado',
+  'Carta de oferta rechazada',
+  'Candidato desistió',
+  'No disponible',
+  'Otro',
+];
+
+// ═══════════════════════════════════════════════
+// PLANTILLAS WHATSAPP
+// ═══════════════════════════════════════════════
+const WA_TPL = {
+  disponibilidad: p=>`Estimado/a *${p.nombre}*,
+
+Mi nombre es ${WA_CFG.firma?.split('—')[0]?.trim()||'RRHH VCSA'} y me comunico desde *Vértice Construcciones S.A.*
+
+Tenemos una vacante para el cargo de *${p.cargo}* en el proyecto *${p.proyecto}* (Mandante: BHP).
+
+¿Se encuentra disponible e interesado/a en participar de nuestro proceso de selección?
+
+_${WA_CFG.firma||'Equipo RRHH — VCSA'}_`,
+
+  grafologico: p=>`Estimado/a *${p.nombre}*,
+
+Para continuar con su postulación al cargo de *${p.cargo}* en *${p.proyecto}*, le informamos que debe realizar una *evaluación grafológica (test psicolaboral)*.
+
+Le contactaremos con la fecha, hora y modalidad de la evaluación.
+
+Ante cualquier consulta, no dude en escribirnos.
+
+_${WA_CFG.firma||'Equipo RRHH — VCSA'}_`,
+
+  examen: p=>`Estimado/a *${p.nombre}*,
+
+¡Buenas noticias! Ha avanzado en el proceso de selección para el cargo de *${p.cargo}*.
+
+El siguiente paso es realizar su *examen médico preocupacional*.
+
+📅 Le confirmaremos la fecha, horario y dirección del centro médico asignado a la brevedad.
+
+_${WA_CFG.firma||'Equipo RRHH — VCSA'}_`,
+
+  carta: p=>`Estimado/a *${p.nombre}*, ¡felicitaciones! ✅
+
+Ha aprobado todas las etapas del proceso de selección para el cargo de *${p.cargo}* en el proyecto *${p.proyecto}* (BHP).
+
+Le hemos enviado una *carta de oferta formal* con las condiciones de contratación. Por favor revísela y confirme su aceptación.
+
+👤 *Contacto:* ${WA_CFG.firma?.split('—')[0]?.trim()||'RRHH VCSA'}
+
+_${WA_CFG.firma||'Equipo RRHH — VCSA'}_`,
+
+  cursos: p=>`Estimado/a *${p.nombre}*,
+
+Para completar su proceso de incorporación al proyecto *${p.proyecto}* (BHP), debe realizar los *cursos de acreditación y habilitación* exigidos por el mandante.
+
+📋 Su coordinador/a de RRHH le enviará el calendario de cursos, modalidad y plataforma de acceso.
+
+Estos cursos son requisito obligatorio para el ingreso a faena.
+
+_${WA_CFG.firma||'Equipo RRHH — VCSA'}_`,
+
+  ingreso: p=>`🎉 Estimado/a *${p.nombre}*, ¡bienvenido/a al equipo!
+
+Su proceso de contratación ha sido completado exitosamente.
+
+✅ *Cargo:* ${p.cargo}
+🏗️ *Proyecto:* ${p.proyecto}
+🏢 *Mandante:* BHP
+
+Su coordinador/a de RRHH se comunicará con usted para confirmar la *fecha y condiciones de ingreso a faena*.
+
+_${WA_CFG.firma||'Equipo RRHH — VCSA'}_`,
+};
+
+function getWATpl(etapaIdx, p){
+  const e=ETAPAS[etapaIdx]; if(!e||!e.waKey) return null;
+  const fn=WA_TPL[e.waKey]; return fn?fn(p):null;
+}
+
+// ═══════════════════════════════════════════════
+// ESTADO GLOBAL
+// ═══════════════════════════════════════════════
+let persons=[], comments=[], openSteps={};
+
+// ═══════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════
+const escH=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const fmtD=d=>{try{return new Date(d+'T00:00:00').toLocaleDateString('es-CL');}catch{return d||''}};
+function setConn(ok){document.getElementById('cdot').className='cdot '+(ok?'ok':'err');document.getElementById('clbl').textContent=ok?'Conectado':'Sin conexión';}
+function showLoad(m){document.getElementById('load-state').style.display='block';document.getElementById('load-state').innerHTML=`<div class="spinner"></div>${m||'Cargando...'}`;['main','arc','kpi'].forEach(x=>document.getElementById('wrap-'+x).style.display='none');}
+function hideLoad(){document.getElementById('load-state').style.display='none';}
+function showErr(m){const e=document.getElementById('err-banner');e.style.display='block';e.innerHTML=`<strong>Error:</strong> ${escH(m)} <button class="btn sm" style="margin-left:8px" onclick="recargar()">Reintentar</button>`;}
+function clearErr(){document.getElementById('err-banner').style.display='none';}
+function countWA(p){return Object.values(p.waLog||{}).reduce((a,arr)=>a+(arr?.length||0),0);}
+function diasEnEtapa(p){if(!p.fechaSolicitud) return 0; const ref=new Date(); const ini=new Date(p.fechaSolicitud+'T00:00:00'); return Math.max(0,Math.floor((ref-ini)/(864e5)));}
+
+// ═══════════════════════════════════════════════
+// SP FETCH OVERRIDE (MSAL)
+// ═══════════════════════════════════════════════
+const _fetch=window.fetch;
+window.fetch=async function(url,opts={}){
+  if(typeof url==='string'&&url.includes('sharepoint.com')&&accessToken){
+    opts.headers=opts.headers||{};
+    if(opts.headers instanceof Headers) opts.headers.set('Authorization','Bearer '+accessToken);
+    else opts.headers['Authorization']='Bearer '+accessToken;
+    delete opts.credentials; opts.mode='cors';
+  }
+  return _fetch(url,opts);
+};
+
+// ═══════════════════════════════════════════════
+// SP API
+// ═══════════════════════════════════════════════
+let _digest=null, _digestExp=0;
+function apiUrl(path){return SITE_URL.replace(/\/$/,'')+'/_api/'+path;}
+async function getDigest(){
+  if(_digest&&Date.now()<_digestExp) return _digest;
+  const r=await fetch(apiUrl('contextinfo'),{method:'POST',headers:{'Accept':'application/json;odata=nometadata','Content-Length':'0'},credentials:'include'});
+  if(!r.ok) throw new Error('No se pudo autenticar con SharePoint ('+r.status+')');
+  const d=await r.json(); _digest=d.FormDigestValue; _digestExp=Date.now()+28*60*1000; return _digest;
+}
+async function spGet(list,sel=''){
+  let url=apiUrl(`web/lists/getbytitle('${list}')/items?$top=5000`);
+  if(sel) url+='&$select='+sel;
+  const r=await fetch(url,{headers:{'Accept':'application/json;odata=nometadata'},credentials:'include'});
+  if(!r.ok) throw new Error(`Error al leer '${list}': HTTP ${r.status}`);
+  return (await r.json()).value;
+}
+async function spPost(list,body){
+  const d=await getDigest();
+  const r=await fetch(apiUrl(`web/lists/getbytitle('${list}')/items`),{method:'POST',headers:{'Accept':'application/json;odata=nometadata','Content-Type':'application/json;odata=nometadata','X-RequestDigest':d},credentials:'include',body:JSON.stringify(body)});
+  if(!r.ok){const t=await r.text();throw new Error(`Error al crear: ${r.status}`);}
+  return await r.json();
+}
+async function spPatch(list,id,body){
+  const d=await getDigest();
+  const r=await fetch(apiUrl(`web/lists/getbytitle('${list}')/items(${id})`),{method:'POST',headers:{'Accept':'application/json;odata=nometadata','Content-Type':'application/json;odata=nometadata','X-RequestDigest':d,'X-HTTP-Method':'MERGE','If-Match':'*'},credentials:'include',body:JSON.stringify(body)});
+  if(!r.ok&&r.status!==204) throw new Error(`Error al actualizar ${id}: ${r.status}`);
+}
+async function spDelete(list,id){
+  const d=await getDigest();
+  const r=await fetch(apiUrl(`web/lists/getbytitle('${list}')/items(${id})`),{method:'POST',headers:{'Accept':'application/json;odata=nometadata','X-RequestDigest':d,'X-HTTP-Method':'DELETE','If-Match':'*'},credentials:'include'});
+  if(!r.ok&&r.status!==204) throw new Error(`Error al eliminar ${id}: ${r.status}`);
+}
+
+// ═══════════════════════════════════════════════
+// SP MAPPING
+// ═══════════════════════════════════════════════
+const SP_SEL = 'Id,Nombre,Cargo,Proyecto,Mandante,SolicitadoPor,FechaSolicitud,Telefono,Disponible,Etapa,Estado,MotivoArchivo,FechaArchivo,FechaGrafologico,ResultadoGrafologico,ResultadoChapi,FechaExamen,ResultadoExamen,FechaCartaOferta,RespuestaCartaOferta,CargaCursos,CursosAcreditacion,CursosHabilitacion,Modulo3D,Fecha3D,Resultado3D,Nivelacion,FechaContratacion,WaLog,DiasEnEtapa';
+
+function spToP(i){return{
+  id:i.Id,spId:i.Id,nombre:i.Nombre||'',cargo:i.Cargo||'',proyecto:i.Proyecto||'',
+  mandante:i.Mandante||'BHP',solicitadoPor:i.SolicitadoPor||'',
+  fechaSolicitud:i.FechaSolicitud?i.FechaSolicitud.slice(0,10):'',
+  telefono:i.Telefono||'',disponible:i.Disponible||'',
+  etapa:i.Etapa||0,estado:i.Estado||'EnProceso',
+  motivoArchivo:i.MotivoArchivo||'',fechaArchivo:i.FechaArchivo?i.FechaArchivo.slice(0,10):'',
+  fechaGrafologico:i.FechaGrafologico?i.FechaGrafologico.slice(0,10):'',
+  resultadoGrafologico:i.ResultadoGrafologico||'',resultadoChapi:i.ResultadoChapi||'',
+  fechaExamen:i.FechaExamen?i.FechaExamen.slice(0,10):'',resultadoExamen:i.ResultadoExamen||'',
+  fechaCartaOferta:i.FechaCartaOferta?i.FechaCartaOferta.slice(0,10):'',
+  respuestaCartaOferta:i.RespuestaCartaOferta||'',cargaCursos:i.CargaCursos||'',
+  cursosAcreditacion:i.CursosAcreditacion||'',cursosHabilitacion:i.CursosHabilitacion||'',
+  modulo3D:i.Modulo3D||'',fecha3D:i.Fecha3D?i.Fecha3D.slice(0,10):'',
+  resultado3D:i.Resultado3D||'',nivelacion:i.Nivelacion||'',
+  fechaContratacion:i.FechaContratacion?i.FechaContratacion.slice(0,10):'',
+  waLog:i.WaLog?JSON.parse(i.WaLog):{},diasEnEtapa:i.DiasEnEtapa||0,
+};}
+
+function pToSp(p){return{
+  Title:p.nombre+(p.cargo?' — '+p.cargo:'')+(p.proyecto?' · '+p.proyecto:''),
+  Nombre:p.nombre,Cargo:p.cargo,Proyecto:p.proyecto,Mandante:p.mandante||'BHP',
+  SolicitadoPor:p.solicitadoPor||'',FechaSolicitud:p.fechaSolicitud||null,
+  Telefono:p.telefono||'',Disponible:p.disponible||'',
+  Etapa:+p.etapa||0,Estado:p.estado||'EnProceso',
+  MotivoArchivo:p.motivoArchivo||'',FechaArchivo:p.fechaArchivo||null,
+  FechaGrafologico:p.fechaGrafologico||null,ResultadoGrafologico:p.resultadoGrafologico||'',
+  ResultadoChapi:p.resultadoChapi||'',FechaExamen:p.fechaExamen||null,
+  ResultadoExamen:p.resultadoExamen||'',FechaCartaOferta:p.fechaCartaOferta||null,
+  RespuestaCartaOferta:p.respuestaCartaOferta||'',CargaCursos:p.cargaCursos||'',
+  CursosAcreditacion:p.cursosAcreditacion||'',CursosHabilitacion:p.cursosHabilitacion||'',
+  Modulo3D:p.modulo3D||'',Fecha3D:p.fecha3D||null,Resultado3D:p.resultado3D||'',
+  Nivelacion:p.nivelacion||'',FechaContratacion:p.fechaContratacion||null,
+  DiasEnEtapa:+p.diasEnEtapa||0,
+};}
+
+function spToC(i){return{id:i.Id,spId:i.Id,candidatoId:i.CandidatoId,indiceEtapa:i.IndiceEtapa,autor:i.Autor||'',fecha:i.Fecha?i.Fecha.slice(0,10):'',texto:i.Texto||''};}
+function cToSp(c){return{Title:(c.autor||'—')+' / Etapa '+(c.indiceEtapa+1),CandidatoId:c.candidatoId,IndiceEtapa:c.indiceEtapa,Autor:c.autor,Fecha:c.fecha||new Date().toISOString().slice(0,10),Texto:c.texto};}
+
+// ═══════════════════════════════════════════════
+// WHATSAPP
+// ═══════════════════════════════════════════════
+function logWA(pid,idx,phone,msg,mode){
+  const p=persons.find(x=>x.id===pid); if(!p)return;
+  if(!p.waLog) p.waLog={};
+  const k=String(idx); if(!p.waLog[k]) p.waLog[k]=[];
+  p.waLog[k].push({date:new Date().toISOString().slice(0,16),phone,mode,msg:msg.slice(0,120)});
+  spPatch(LIST_CAND,p.spId,{WaLog:JSON.stringify(p.waLog)}).catch(()=>{});
+}
+async function sendWA(pid,idx,phone,msgOverride){
+  const p=persons.find(x=>x.id===pid); if(!p) return;
+  const msg=msgOverride||getWATpl(idx,p); if(!msg) return;
+  if(WA_CFG.mode==='twilio'&&WA_CFG.twilioSid&&WA_CFG.twilioToken){
+    try{
+      const to='whatsapp:'+(phone.startsWith('+')?phone:'+'+phone);
+      const r=await fetch(`https://api.twilio.com/2010-04-01/Accounts/${WA_CFG.twilioSid}/Messages.json`,
+        {method:'POST',headers:{'Authorization':'Basic '+btoa(WA_CFG.twilioSid+':'+WA_CFG.twilioToken),'Content-Type':'application/x-www-form-urlencoded'},
+        body:new URLSearchParams({From:WA_CFG.twilioFrom,To:to,Body:msg})});
+      if(r.ok){logWA(pid,idx,phone,msg,'api');return{ok:true,mode:'api'};}
+    }catch(e){}
+  }
+  window.open('https://wa.me/'+phone.replace(/[^0-9]/g,'')+'?text='+encodeURIComponent(msg),'_blank');
+  logWA(pid,idx,phone,msg,'web');
+  return{ok:true,mode:'web'};
+}
+
+function openWAStep(pid,idx){
+  const p=persons.find(x=>x.id===pid); if(!p) return;
+  const e=ETAPAS[idx]; if(!e) return;
+  const tpl=getWATpl(idx,p)||`Estimado/a ${p.nombre}, contacto de RRHH VCSA respecto al proceso para ${p.cargo} — ${p.proyecto}.`;
+  const logs=(p.waLog||{})[String(idx)]||[];
+  const logsH=logs.slice(-3).map(l=>`<div class="wa-log-e">📱 ${escH(l.phone)} · ${l.date} · ${l.mode==='api'?'Twilio API':'wa.me'}</div>`).join('');
+  document.getElementById('modal-box').className='modal';
+  document.getElementById('modal-content').innerHTML=`
+    <div class="modal-head" style="background:var(--wal);border-bottom-color:#a8e6bf">
+      <div><div class="modal-title" style="color:var(--wad)">💬 WhatsApp — ${escH(e.label)}</div>
+      <div class="modal-meta">${escH(p.nombre)} · ${escH(p.cargo)} · ${escH(p.proyecto)}</div></div>
+      <button class="btn icon ghost" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      ${logsH?`<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Mensajes anteriores</div>${logsH}</div>`:''}
+      <div class="wa-phone-row"><label>Teléfono</label><input id="wpi" type="tel" placeholder="56912345678" value="${escH(p.telefono||'')}"><button class="btn xs" onclick="savePhone(${pid})">Guardar</button></div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Formato: 56 + número sin guiones ni espacios</div>
+      <div style="font-size:11px;font-weight:700;color:var(--wad);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Mensaje — puedes editarlo</div>
+      <textarea class="wa-textarea" id="wmt">${escH(tpl)}</textarea>
+      <div style="font-size:11px;color:var(--text3)">Modo: <strong>${WA_CFG.mode==='twilio'&&WA_CFG.twilioSid?'Twilio API (envío automático)':'WhatsApp Web (abre WA en tu dispositivo)'}</strong></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal()">Cancelar</button>
+      <button class="btn wa" onclick="enviarWA(${pid},${idx})">💬 Enviar WhatsApp</button>
+    </div>`;
+  document.getElementById('modal-bg').style.display='flex';
+}
+async function savePhone(pid){
+  const ph=document.getElementById('wpi')?.value.trim();
+  const p=persons.find(x=>x.id===pid); if(!p||!ph) return;
+  p.telefono=ph; try{await spPatch(LIST_CAND,p.spId,{Telefono:ph});}catch(e){}
+}
+async function enviarWA(pid,idx){
+  const ph=document.getElementById('wpi')?.value.trim();
+  const msg=document.getElementById('wmt')?.value.trim();
+  if(!ph){alert('Ingresa el número de teléfono.');return;}
+  const btn=document.querySelector('#modal-content .btn.wa');
+  btn.disabled=true; btn.textContent='Enviando...';
+  const res=await sendWA(pid,idx,ph,msg);
+  closeModal();
+  if(res.ok){alert(res.mode==='api'?'Mensaje enviado vía Twilio.':'WhatsApp abierto. Verifica y envía el mensaje.');render();}
+}
+
+function openWAConfig(){
+  document.getElementById('modal-box').className='modal';
+  document.getElementById('modal-content').innerHTML=`
+    <div class="modal-head"><div class="modal-title">Configuración de WhatsApp</div><button class="btn icon ghost" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <div onclick="selWAMode('web')" style="flex:1;padding:12px;border-radius:10px;border:2px solid ${WA_CFG.mode==='web'?'var(--wa)':'var(--border)'};background:${WA_CFG.mode==='web'?'var(--wal)':'var(--surface)'};cursor:pointer;text-align:center;transition:all .12s" id="wb-web">
+          <div style="font-size:20px;margin-bottom:5px">🌐</div>
+          <div style="font-size:13px;font-weight:600">WhatsApp Web</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">Sin costo · Abre WA con mensaje prellenado</div>
+        </div>
+        <div onclick="selWAMode('twilio')" style="flex:1;padding:12px;border-radius:10px;border:2px solid ${WA_CFG.mode==='twilio'?'var(--wa)':'var(--border)'};background:${WA_CFG.mode==='twilio'?'var(--wal)':'var(--surface)'};cursor:pointer;text-align:center;transition:all .12s" id="wb-twilio">
+          <div style="font-size:20px;margin-bottom:5px">🚀</div>
+          <div style="font-size:13px;font-weight:600">Twilio API</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">Envío automático · Requiere cuenta Twilio</div>
+        </div>
+      </div>
+      <div id="twilio-fields" style="${WA_CFG.mode==='twilio'?'':'display:none'}">
+        <div class="fg"><label>Account SID</label><input id="tc-sid" type="text" value="${escH(WA_CFG.twilioSid||'')}"></div>
+        <div class="fg"><label>Auth Token</label><input id="tc-token" type="password" value="${escH(WA_CFG.twilioToken||'')}"></div>
+        <div class="fg"><label>Número de envío (whatsapp:+56...)</label><input id="tc-from" type="text" value="${escH(WA_CFG.twilioFrom||'')}"></div>
+      </div>
+      <div class="fg"><label>Firma en mensajes</label><input id="wc-firma" type="text" value="${escH(WA_CFG.firma||'Equipo RRHH — Vértice Construcciones S.A.')}"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal()">Cancelar</button>
+      <button class="btn primary" onclick="saveWAConfig()">Guardar</button>
+    </div>`;
+  document.getElementById('modal-bg').style.display='flex';
+}
+function selWAMode(m){
+  WA_CFG.mode=m;
+  document.getElementById('wb-web').style.borderColor=m==='web'?'var(--wa)':'var(--border)';
+  document.getElementById('wb-web').style.background=m==='web'?'var(--wal)':'var(--surface)';
+  document.getElementById('wb-twilio').style.borderColor=m==='twilio'?'var(--wa)':'var(--border)';
+  document.getElementById('wb-twilio').style.background=m==='twilio'?'var(--wal)':'var(--surface)';
+  document.getElementById('twilio-fields').style.display=m==='twilio'?'':'none';
+}
+function saveWAConfig(){
+  WA_CFG.firma=document.getElementById('wc-firma')?.value.trim()||'Equipo RRHH — Vértice Construcciones S.A.';
+  if(WA_CFG.mode==='twilio'){
+    WA_CFG.twilioSid=document.getElementById('tc-sid')?.value.trim()||'';
+    WA_CFG.twilioToken=document.getElementById('tc-token')?.value.trim()||'';
+    WA_CFG.twilioFrom=document.getElementById('tc-from')?.value.trim()||'';
+  }
+  localStorage.setItem(WA_KEY,JSON.stringify(WA_CFG)); closeModal();
+}
+
+// ═══════════════════════════════════════════════
+// CARGA DE DATOS
+// ═══════════════════════════════════════════════
+async function recargar(){
+  clearErr(); showLoad('Cargando datos desde SharePoint...');
+  try{
+    const[rp,rc]=await Promise.all([spGet(LIST_CAND,SP_SEL),spGet(LIST_CMT,'Id,CandidatoId,IndiceEtapa,Autor,Fecha,Texto')]);
+    persons=rp.map(spToP); comments=rc.map(spToC);
+    setConn(true); hideLoad(); fillFilters();
+    const tab=document.querySelector('.tab.active')?.id.replace('tab-','')|| 'main';
+    showWrap(tab); render(); renderArc();
+  }catch(err){hideLoad(); setConn(false); showErr(err.message);}
+}
+function fillFilters(){
+  const projs=[...new Set(persons.map(p=>p.proyecto))].sort();
+  const sols=[...new Set(persons.map(p=>p.solicitadoPor))].sort();
+  ['fProyecto','afProyecto'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    el.innerHTML='<option value="">Todos los proyectos</option>'+projs.map(x=>`<option>${escH(x)}</option>`).join('');
+  });
+  document.getElementById('fSolicitante').innerHTML='<option value="">Todos los solicitantes</option>'+sols.map(x=>`<option>${escH(x)}</option>`).join('');
+}
+
+// ═══════════════════════════════════════════════
+// RENDER PRINCIPAL
+// ═══════════════════════════════════════════════
+function renderMetrics(){
+  const activos=persons.filter(p=>p.estado==='EnProceso');
+  const contrat=persons.filter(p=>p.estado==='Contratado');
+  const archiv=persons.filter(p=>p.estado==='Archivado');
+  const waTotal=persons.reduce((s,p)=>s+countWA(p),0);
+  const faseMap={pre:0,val:0,med:0,inc:0,fin:0};
+  activos.forEach(p=>{const f=ETAPAS[Math.min(p.etapa,ETAPAS.length-1)]?.fase||'pre';faseMap[f]=(faseMap[f]||0)+1;});
+  document.getElementById('metrics').innerHTML=`
+    <div class="metric"><div class="metric-label">En proceso</div><div class="metric-value">${activos.length}</div><div class="metric-sub">candidatos activos</div></div>
+    <div class="metric m-green"><div class="metric-label">Contratados</div><div class="metric-value green">${contrat.length}</div></div>
+    <div class="metric m-amber"><div class="metric-label">Incorporación</div><div class="metric-value amber">${faseMap.inc||0}</div><div class="metric-sub">en cursos / oferta</div></div>
+    <div class="metric m-red"><div class="metric-label">Archivados</div><div class="metric-value red">${archiv.length}</div></div>
+    <div class="metric m-wa"><div class="metric-label">WA enviados</div><div class="metric-value wa">${waTotal}</div></div>`;
+  document.getElementById('cnt-main').textContent=activos.length;
+  document.getElementById('cnt-arc').textContent=archiv.length;
+}
+
+function getFiltered(){
+  const fp=document.getElementById('fProyecto')?.value||'';
+  const fe=document.getElementById('fEtapa')?.value;
+  const fs=document.getElementById('fSolicitante')?.value||'';
+  const fb=(document.getElementById('fBuscar')?.value||'').toLowerCase();
+  return persons.filter(p=>{
+    if(p.estado!=='EnProceso') return false;
+    if(fp&&p.proyecto!==fp) return false;
+    if(fe!==undefined&&fe!==''&&p.etapa!==+fe) return false;
+    if(fs&&p.solicitadoPor!==fs) return false;
+    if(fb&&!`${p.nombre} ${p.cargo} ${p.proyecto}`.toLowerCase().includes(fb)) return false;
+    return true;
+  });
+}
+
+function render(){
+  renderMetrics();
+  const list=getFiltered(), tbody=document.getElementById('tbody-main');
+  if(!list.length){tbody.innerHTML=`<tr><td colspan="7"><div class="empty-row">Sin candidatos activos con los filtros seleccionados.</div></td></tr>`;return;}
+  tbody.innerHTML=list.map(p=>{
+    const ei=Math.min(p.etapa,ETAPAS.length-1), e=ETAPAS[ei];
+    const dots=ETAPAS.map((_,i)=>{
+      let c='pdot';
+      if(i<p.etapa) c+=' done';
+      else if(i===p.etapa) c+=' active';
+      return `<div class="${c}" title="Etapa ${i+1}: ${ETAPAS[i].label}"></div>`;
+    }).join('');
+    const nw=countWA(p);
+    const hasWA=e?.waKey;
+    const waTd=hasWA?`<button class="btn xs wa" onclick="openWAStep(${p.id},${ei});event.stopPropagation()" title="Enviar WhatsApp — ${escH(e.label)}">💬${nw>0?` ${nw}`:''}</button>`:`<span style="font-size:11px;color:var(--text3)">—</span>`;
+    const f=FASES[e?.fase||'pre'];
+    const diasTxt=p.diasEnEtapa>0?`<span class="dias-sla" title="Días en esta etapa">${p.diasEnEtapa}d</span>`:'<span style="font-size:11px;color:var(--text3)">—</span>';
+    return`<tr onclick="openDetail(${p.id})">
+      <td><div class="cname">${escH(p.nombre)}</div><div class="csub">📱 ${p.telefono?escH(p.telefono):'Sin teléfono'}</div></td>
+      <td><div style="font-size:13px;font-weight:500">${escH(p.cargo)}</div><div class="csub">${escH(p.proyecto)} · Sol. ${escH(p.solicitadoPor)}</div></td>
+      <td>
+        <div style="display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;background:${f.bg};color:${f.color};margin-bottom:3px">${f.label}</div>
+        <div style="font-size:12px;font-weight:600">${ei+1}. ${escH(e.label)}</div>
+      </td>
+      <td><div class="prog">${dots}</div><div style="font-size:10px;color:var(--text3);margin-top:3px">${p.etapa+1} / ${ETAPAS.length}</div></td>
+      <td>${diasTxt}</td>
+      <td>${p.disponible?`<span class="badge ${p.disponible==='Si'?'green':p.disponible==='No'?'red':'gray'}">${escH(p.disponible)}</span>`:'<span class="badge gray">—</span>'}</td>
+      <td onclick="event.stopPropagation()">${waTd}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderArc(){
+  const fp=document.getElementById('afProyecto')?.value||'';
+  const fb=(document.getElementById('afBuscar')?.value||'').toLowerCase();
+  const list=persons.filter(p=>{
+    if(p.estado!=='Archivado') return false;
+    if(fp&&p.proyecto!==fp) return false;
+    if(fb&&!`${p.nombre} ${p.cargo}`.toLowerCase().includes(fb)) return false;
+    return true;
+  });
+  const tbody=document.getElementById('tbody-arc');
+  if(!list.length){tbody.innerHTML=`<tr><td colspan="7"><div class="empty-row">Sin candidatos archivados.</div></td></tr>`;return;}
+  tbody.innerHTML=list.map(p=>{
+    const ei=Math.min(p.etapa,ETAPAS.length-1),e=ETAPAS[ei];
+    return`<tr>
+      <td><div class="cname">${escH(p.nombre)}</div></td>
+      <td><div style="font-size:13px">${escH(p.cargo)}</div><div class="csub">${escH(p.proyecto)}</div></td>
+      <td><div style="font-size:12px;font-weight:500">${ei+1}. ${escH(e.label)}</div></td>
+      <td><span class="arc-reason">${escH(p.motivoArchivo||'—')}</span></td>
+      <td style="font-size:12px;color:var(--text2)">${escH(p.solicitadoPor||'—')}</td>
+      <td style="font-size:12px;color:var(--text2);font-family:'DM Mono',monospace">${fmtD(p.fechaSolicitud)}</td>
+      <td><button class="btn xs" onclick="openDetail(${p.id})">Ver</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderKPI(){
+  const activos=persons.filter(p=>p.estado==='EnProceso');
+  const contrat=persons.filter(p=>p.estado==='Contratado');
+  const archiv=persons.filter(p=>p.estado==='Archivado');
+  const waTotal=persons.reduce((s,p)=>s+countWA(p),0);
+  document.getElementById('kpi-grid').innerHTML=`
+    <div class="kpi"><div class="kpi-label">Total candidatos gestionados</div><div class="kpi-value">${persons.length}</div></div>
+    <div class="kpi"><div class="kpi-label">Tasa de contratación</div><div class="kpi-value">${persons.length?Math.round(contrat.length/persons.length*100):0}%</div></div>
+    <div class="kpi kpi-red"><div class="kpi-label">Tasa de descarte</div><div class="kpi-value">${persons.length?Math.round(archiv.length/persons.length*100):0}%</div></div>
+    <div class="kpi kpi-wa"><div class="kpi-label">WA enviados total</div><div class="kpi-value">${waTotal}</div></div>
+    <div class="kpi kpi-amber"><div class="kpi-label">Proyectos activos</div><div class="kpi-value">${new Set(activos.map(p=>p.proyecto)).size}</div></div>`;
+  document.getElementById('tbody-kpi').innerHTML=ETAPAS.map((e,idx)=>{
+    const enCurso=persons.filter(p=>p.estado==='EnProceso'&&p.etapa===idx).length;
+    const complet=persons.filter(p=>p.etapa>idx||p.estado==='Contratado').length;
+    const arcHere=persons.filter(p=>p.estado==='Archivado'&&p.etapa===idx).length;
+    const waCount=persons.reduce((s,p)=>s+((p.waLog||{})[String(idx)]?.length||0),0);
+    return`<tr>
+      <td style="font-size:12px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text3)">${e.n}</td>
+      <td style="font-size:12px;font-weight:600">${escH(e.label)}${e.condicional?` <span class="badge gray" style="font-size:10px">Condicional</span>`:''}</td>
+      <td style="font-size:14px;font-weight:700;font-family:'DM Mono',monospace">${enCurso}</td>
+      <td style="font-size:14px;font-weight:700;font-family:'DM Mono',monospace;color:var(--green)">${complet}</td>
+      <td style="font-size:14px;font-weight:700;font-family:'DM Mono',monospace;color:${arcHere>0?'var(--red)':'var(--text3)'}">${arcHere}</td>
+      <td style="font-size:13px;color:${waCount>0?'var(--wad)':'var(--text3)'}${waCount>0?';font-weight:600':''}">${waCount>0?'💬 '+waCount:e.waKey?'0':'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
+// DETAIL MODAL
+// ═══════════════════════════════════════════════
+function openDetail(id){
+  const p=persons.find(x=>x.id===id); if(!p) return;
+  openSteps={}; renderDetail(p);
+  document.getElementById('modal-bg').style.display='flex';
+}
+
+function renderDetail(p){
+  document.getElementById('modal-box').className='modal';
+  const nw=countWA(p), isArc=p.estado==='Archivado', isContr=p.estado==='Contratado';
+  const statusBadge=isContr?'<span class="badge green">Contratado</span>':isArc?'<span class="badge red">Archivado</span>':'<span class="badge amber">En proceso</span>';
+
+  let prevFase='', pipelineHtml='';
+  ETAPAS.forEach((e,i)=>{
+    if(e.fase!==prevFase){
+      const f=FASES[e.fase];
+      pipelineHtml+=`<div class="pipe-phase" style="background:${f.bg};color:${f.color}">${f.label}</div>`;
+      prevFase=e.fase;
+    }
+    let cls='s-pending', icon='·', stat='', statCls='';
+    if(isArc&&i===p.etapa){cls='s-archived';icon='✕';stat='Archivado aquí';statCls='s-archived';}
+    else if(i<p.etapa||isContr){cls='s-done';icon='✓';stat='Completado';statCls='s-done';}
+    else if(i===p.etapa){cls='s-active';icon='›';stat='En curso';statCls='s-active';}
+    const isOpen=!!openSteps[i];
+    const cmts=comments.filter(c=>c.candidatoId===p.id&&c.indiceEtapa===i);
+    const waLogs=(p.waLog||{})[String(i)]||[];
+    const skipped=(e.condicional&&i<p.etapa&&!['Aplica','Aprobado','Reprobado'].includes(p.modulo3D)&&e.key==='mod3d')||(e.condicional&&i<p.etapa&&p.nivelacion==='No'&&e.key==='nivelacion');
+    if(skipped) cls='s-skipped';
+
+    pipelineHtml+=`<div class="pipe-step ${cls}">
+      <div class="pipe-head" onclick="togglePipe(${p.id},${i})">
+        <div class="pipe-num">${icon}</div>
+        <div class="pipe-name">${i+1}. ${escH(e.label)}${e.condicional?` <span style="font-size:10px;opacity:.7">(condicional)</span>`:''}</div>
+        ${cmts.length?`<span style="font-size:10px;font-weight:700;background:var(--blue);color:#fff;padding:1px 6px;border-radius:99px">${cmts.length}</span>`:''}
+        ${waLogs.length?`<span style="font-size:10px;font-weight:700;background:var(--wa);color:#fff;padding:1px 6px;border-radius:99px">💬${waLogs.length}</span>`:''}
+        ${stat?`<div class="pipe-stat ${statCls}">${stat}</div>`:''}
+        <span class="pipe-arrow ${isOpen?'open':''}">▼</span>
+      </div>
+      ${isOpen?`<div class="pipe-body">${buildStepBody(p,i,e,cmts,waLogs)}</div>`:''}
+    </div>`;
+  });
+
+  document.getElementById('modal-content').innerHTML=`
+    <div class="modal-head">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+          <div class="modal-title">${escH(p.nombre)}</div>
+          ${statusBadge}
+          ${p.telefono?`<span style="font-size:12px;color:var(--wad)">📱 ${escH(p.telefono)}</span>`:''}
+        </div>
+        <div class="modal-meta">${escH(p.cargo)} · ${escH(p.proyecto)} · BHP · Sol. por: ${escH(p.solicitadoPor||'—')} · Inicio: ${fmtD(p.fechaSolicitud)} · 💬 ${nw} WA</div>
+      </div>
+      <button class="btn icon ghost" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      ${isArc?`<div style="background:var(--rl);border:1px solid var(--rm);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--red)"><strong>Archivado:</strong> ${escH(p.motivoArchivo)} ${p.fechaArchivo?`· ${fmtD(p.fechaArchivo)}`:''}</div>`:''}
+      <div class="pipeline">${pipelineHtml}</div>
+    </div>
+    <div class="modal-foot">
+      ${!isArc&&!isContr?`<button class="btn danger" onclick="openArchiveModal(${p.id})">Archivar</button>`:''}
+      <button class="btn sm" onclick="openEdit(${p.id})">Editar datos</button>
+      ${!isArc&&!isContr?`<button class="btn sm wa" onclick="openWAStep(${p.id},${Math.min(p.etapa,ETAPAS.length-1)})">💬 WA etapa actual</button>`:''}
+      ${!isArc&&!isContr&&p.etapa<ETAPAS.length-1?`<button class="btn sm primary" onclick="avanzar(${p.id})">Avanzar etapa →</button>`:''}
+      ${!isArc&&!isContr&&p.etapa===ETAPAS.length-1?`<button class="btn green sm" onclick="contratar(${p.id})">✓ Marcar como Contratado</button>`:''}
+    </div>`;
+}
+
+function buildStepBody(p,i,e,cmts,waLogs){
+  let html='';
+  // Campos específicos por etapa
+  if(i===0){
+    html+=rrow('Solicitado por','SolicitadoPor',p,'text');
+    html+=rrow('Fecha solicitud','FechaSolicitud',p,'date');
+    html+=rrow('Disponible','Disponible',p,'select',['','Si','No']);
+  } else if(i===1){
+    html+=rrow('Fecha grafológico','FechaGrafologico',p,'date');
+    html+=rrow('Resultado','ResultadoGrafologico',p,'select',['','Recomendado','No Recomendado','En evaluación']);
+  } else if(i===2){
+    html+=rrow('Resultado Chapi','ResultadoChapi',p,'select',['','Aprobado','Rechazado']);
+  } else if(i===3){
+    html+=rrow('Fecha examen','FechaExamen',p,'date');
+    html+=rrow('Resultado','ResultadoExamen',p,'select',['','Aprobado','Contraindicado']);
+  } else if(i===4){
+    html+=rrow('Fecha envío','FechaCartaOferta',p,'date');
+    html+=rrow('Respuesta','RespuestaCartaOferta',p,'select',['','Pendiente','Aceptada','Rechazada']);
+  } else if(i===5){
+    html+=rrow('Cursos cargados','CargaCursos',p,'select',['','Si','No']);
+  } else if(i===6){
+    html+=rrow('Estado cursos acred.','CursosAcreditacion',p,'select',['','Pendiente','En proceso','Completado']);
+  } else if(i===7){
+    html+=rrow('Estado cursos hab.','CursosHabilitacion',p,'select',['','Pendiente','En proceso','Completado']);
+  } else if(i===8){
+    html+=rrow('Módulo 3D','Modulo3D',p,'select',['','No Aplica','Aplica','Aprobado','Reprobado']);
+    html+=rrow('Fecha 3D','Fecha3D',p,'date');
+  } else if(i===9){
+    html+=rrow('Nivelación','Nivelacion',p,'select',['','No','Si']);
+  } else if(i===10){
+    html+=rrow('Fecha contratación','FechaContratacion',p,'date');
+  }
+  if(html) html+=`<button class="btn xs primary" onclick="saveStepData(${p.id},${i})" style="margin-bottom:10px">Guardar cambios</button>`;
+  // Comentarios
+  const cmtHtml=cmts.length?cmts.map(c=>`<div class="cmt"><div class="cmt-meta"><span class="cmt-author">${escH(c.autor)}</span><span><span class="cmt-date">${fmtD(c.fecha)}</span><button class="cmt-del" onclick="delCmt(${p.id},${i},${c.spId});event.stopPropagation()">✕</button></span></div><div class="cmt-text">${escH(c.texto)}</div></div>`).join(''):'<div class="no-cmt">Sin comentarios en esta etapa.</div>';
+  html+=`<div class="cmt-list">${cmtHtml}</div>
+    <div class="cmt-input">
+      <input type="text" id="ca-${p.id}-${i}" placeholder="Tu nombre" style="max-width:110px">
+      <input type="text" id="ct-${p.id}-${i}" placeholder="Agregar comentario..." onkeydown="if(event.key==='Enter')addCmt(${p.id},${i})">
+      <button class="btn xs primary" onclick="addCmt(${p.id},${i})">+</button>
+    </div>`;
+  // WA section
+  if(e.waKey){
+    const logsH=waLogs.slice(-3).map(l=>`<div class="wa-log-e">💬 ${escH(l.phone)} · ${l.date}</div>`).join('');
+    html+=`<div class="wa-sec">
+      <div class="wa-sec-title">WhatsApp al candidato</div>
+      ${logsH}
+      <button class="btn xs wa" onclick="openWAStep(${p.id},${i});event.stopPropagation()">Enviar WhatsApp — ${escH(e.label)}</button>
+    </div>`;
+  }
+  return html;
+}
+
+function rrow(label,field,p,type,opts){
+  const spField=field;
+  const pField=field.charAt(0).toLowerCase()+field.slice(1);
+  const val=p[pField]||'';
+  if(type==='select'){
+    return `<div class="rrow"><label>${label}</label><select id="sf-${p.id}-${spField}" onchange="updateField(${p.id},'${spField}',this.value)">
+      ${opts.map(o=>`<option${o===val?' selected':''}>${escH(o)}</option>`).join('')}
+    </select></div>`;
+  } else if(type==='date'){
+    return `<div class="rrow"><label>${label}</label><input type="date" id="sf-${p.id}-${spField}" value="${escH(val)}" onchange="updateField(${p.id},'${spField}',this.value)"></div>`;
+  } else {
+    return `<div class="rrow"><label>${label}</label><input type="text" id="sf-${p.id}-${spField}" value="${escH(val)}" onchange="updateField(${p.id},'${spField}',this.value)"></div>`;
+  }
+}
+
+function updateField(pid,spField,val){
+  const p=persons.find(x=>x.id===pid); if(!p) return;
+  const pField=spField.charAt(0).toLowerCase()+spField.slice(1);
+  p[pField]=val;
+}
+
+async function saveStepData(pid,stepIdx){
+  const p=persons.find(x=>x.id===pid); if(!p) return;
+  try{await spPatch(LIST_CAND,p.spId,pToSp(p));renderDetail(p);render();}
+  catch(e){alert('Error al guardar: '+e.message);}
+}
+
+function togglePipe(pid,idx){openSteps[idx]=!openSteps[idx];renderDetail(persons.find(p=>p.id===pid));}
+
+// ═══════════════════════════════════════════════
+// COMMENTS
+// ═══════════════════════════════════════════════
+async function addCmt(pid,idx){
+  const p=persons.find(x=>x.id===pid); if(!p) return;
+  const autor=document.getElementById(`ca-${pid}-${idx}`)?.value.trim()||'Analista';
+  const texto=document.getElementById(`ct-${pid}-${idx}`)?.value.trim();
+  if(!texto) return;
+  const c={candidatoId:pid,indiceEtapa:idx,autor,fecha:new Date().toISOString().slice(0,10),texto};
+  try{const cr=await spPost(LIST_CMT,cToSp(c));c.id=cr.Id;c.spId=cr.Id;comments.push(c);openSteps[idx]=true;renderDetail(p);}
+  catch(e){alert('Error: '+e.message);}
+}
+async function delCmt(pid,idx,spId){
+  if(!confirm('¿Eliminar comentario?')) return;
+  try{await spDelete(LIST_CMT,spId);comments=comments.filter(c=>c.spId!==spId);openSteps[idx]=true;renderDetail(persons.find(p=>p.id===pid));}
+  catch(e){alert('Error: '+e.message);}
+}
+
+// ═══════════════════════════════════════════════
+// CRUD
+// ═══════════════════════════════════════════════
+async function avanzar(id){
+  const p=persons.find(x=>x.id===id); if(!p||p.etapa>=ETAPAS.length-1) return;
+  const prev=p.etapa; p.etapa++; p.diasEnEtapa=0;
+  try{await spPatch(LIST_CAND,p.spId,{Etapa:p.etapa,DiasEnEtapa:0});renderDetail(p);render();}
+  catch(e){alert('Error: '+e.message);p.etapa=prev;}
+}
+async function contratar(id){
+  if(!confirm('¿Marcar este candidato como Contratado?')) return;
+  const p=persons.find(x=>x.id===id); if(!p) return;
+  p.estado='Contratado';p.etapa=ETAPAS.length-1;
+  const hoy=new Date().toISOString().slice(0,10);
+  if(!p.fechaContratacion) p.fechaContratacion=hoy;
+  try{await spPatch(LIST_CAND,p.spId,{Estado:'Contratado',Etapa:ETAPAS.length-1,FechaContratacion:hoy});closeModal();render();renderArc();}
+  catch(e){alert('Error: '+e.message);}
+}
+
+function openArchiveModal(id){
+  const p=persons.find(x=>x.id===id); if(!p) return;
+  document.getElementById('modal-box').className='modal';
+  document.getElementById('modal-content').innerHTML=`
+    <div class="modal-head"><div class="modal-title" style="color:var(--red)">Archivar candidato</div><button class="btn icon ghost" onclick="openDetail(${id})">✕</button></div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:16px">El candidato se moverá a la sección de <strong>Archivados</strong> y quedará como registro histórico.</p>
+      <div class="fg"><label>Motivo de archivo</label>
+        <select id="arc-motivo">
+          <option value="">Selecciona un motivo...</option>
+          ${MOTIVOS.map(m=>`<option>${escH(m)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="fg"><label>Observación (opcional)</label><textarea id="arc-obs" placeholder="Detalle adicional..."></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="openDetail(${id})">Cancelar</button>
+      <button class="btn danger" onclick="doArchive(${id})">Archivar candidato</button>
+    </div>`;
+}
+async function doArchive(id){
+  const motivo=document.getElementById('arc-motivo')?.value;
+  const obs=document.getElementById('arc-obs')?.value.trim();
+  if(!motivo){alert('Selecciona un motivo de archivo.');return;}
+  const p=persons.find(x=>x.id===id); if(!p) return;
+  p.estado='Archivado'; p.motivoArchivo=motivo+(obs?` — ${obs}`:''); p.fechaArchivo=new Date().toISOString().slice(0,10);
+  try{await spPatch(LIST_CAND,p.spId,{Estado:'Archivado',MotivoArchivo:p.motivoArchivo,FechaArchivo:p.fechaArchivo});closeModal();render();renderArc();}
+  catch(e){alert('Error: '+e.message);}
+}
+
+function openAdd(){
+  document.getElementById('modal-box').className='modal';
+  document.getElementById('modal-content').innerHTML=`
+    <div class="modal-head"><div class="modal-title">Nuevo candidato</div><button class="btn icon ghost" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="fg" style="grid-column:1/-1"><label>Nombre completo *</label><input id="fn" type="text"></div>
+        <div class="fg"><label>Cargo *</label><input id="fc" type="text"></div>
+        <div class="fg"><label>Proyecto *</label><input id="fp" type="text" placeholder="Proflote, Celdas Jameson..."></div>
+        <div class="fg"><label>Solicitado por</label><input id="fs" type="text"></div>
+        <div class="fg"><label>Teléfono (WhatsApp) 📱</label><input id="ft" type="tel" placeholder="56912345678"></div>
+        <div class="fg"><label>Fecha solicitud</label><input id="ff" type="date" value="${new Date().toISOString().slice(0,10)}"></div>
+        <div class="fg"><label>Disponible</label><select id="fd"><option value="">—</option><option>Si</option><option>No</option></select></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal()">Cancelar</button>
+      <button class="btn primary" id="btn-add" onclick="saveNew()">Guardar en SharePoint</button>
+    </div>`;
+  document.getElementById('modal-bg').style.display='flex';
+}
+async function saveNew(){
+  const nombre=document.getElementById('fn').value.trim();
+  const cargo=document.getElementById('fc').value.trim();
+  const proyecto=document.getElementById('fp').value.trim();
+  if(!nombre||!cargo||!proyecto){alert('Nombre, cargo y proyecto son obligatorios.');return;}
+  const np={nombre,cargo,proyecto,mandante:'BHP',solicitadoPor:document.getElementById('fs').value.trim(),
+    telefono:document.getElementById('ft').value.trim(),fechaSolicitud:document.getElementById('ff').value,
+    disponible:document.getElementById('fd').value,etapa:0,estado:'EnProceso',
+    motivoArchivo:'',fechaArchivo:'',fechaGrafologico:'',resultadoGrafologico:'',resultadoChapi:'',
+    fechaExamen:'',resultadoExamen:'',fechaCartaOferta:'',respuestaCartaOferta:'',
+    cargaCursos:'',cursosAcreditacion:'',cursosHabilitacion:'',modulo3D:'',fecha3D:'',
+    resultado3D:'',nivelacion:'',fechaContratacion:'',waLog:{},diasEnEtapa:0};
+  const btn=document.getElementById('btn-add');btn.disabled=true;btn.textContent='Guardando...';
+  try{
+    const cr=await spPost(LIST_CAND,pToSp(np));
+    np.id=cr.Id;np.spId=cr.Id;persons.push(np);
+    closeModal();render();fillFilters();
+  }catch(e){alert('Error: '+e.message);btn.disabled=false;btn.textContent='Guardar en SharePoint';}
+}
+
+function openEdit(id){
+  const p=persons.find(x=>x.id===id); if(!p) return;
+  document.getElementById('modal-box').className='modal';
+  document.getElementById('modal-content').innerHTML=`
+    <div class="modal-head"><div class="modal-title">Editar candidato</div><button class="btn icon ghost" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="fg" style="grid-column:1/-1"><label>Nombre completo</label><input id="en" type="text" value="${escH(p.nombre)}"></div>
+        <div class="fg"><label>Cargo</label><input id="ec" type="text" value="${escH(p.cargo)}"></div>
+        <div class="fg"><label>Proyecto</label><input id="ep" type="text" value="${escH(p.proyecto)}"></div>
+        <div class="fg"><label>Solicitado por</label><input id="es" type="text" value="${escH(p.solicitadoPor||'')}"></div>
+        <div class="fg"><label>Teléfono 📱</label><input id="et" type="tel" value="${escH(p.telefono||'')}"></div>
+        <div class="fg"><label>Etapa actual (0–${ETAPAS.length-1})</label><input id="ee" type="number" min="0" max="${ETAPAS.length-1}" value="${p.etapa}"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="openDetail(${id})">Cancelar</button>
+      <button class="btn primary" onclick="saveEdit(${id})">Guardar cambios</button>
+    </div>`;
+}
+async function saveEdit(id){
+  const p=persons.find(x=>x.id===id); if(!p) return;
+  const prev={...p};
+  p.nombre=document.getElementById('en').value.trim()||p.nombre;
+  p.cargo=document.getElementById('ec').value.trim()||p.cargo;
+  p.proyecto=document.getElementById('ep').value.trim()||p.proyecto;
+  p.solicitadoPor=document.getElementById('es').value.trim();
+  p.telefono=document.getElementById('et').value.trim();
+  p.etapa=Math.min(ETAPAS.length-1,Math.max(0,parseInt(document.getElementById('ee').value)||0));
+  try{await spPatch(LIST_CAND,p.spId,pToSp(p));closeModal();render();fillFilters();}
+  catch(e){Object.assign(p,prev);alert('Error: '+e.message);}
+}
+
+// ═══════════════════════════════════════════════
+// EXPORT / EMAIL
+// ═══════════════════════════════════════════════
+function exportCSV(){
+  const h=['Nombre','Cargo','Proyecto','Mandante','Solicitado por','Fecha solicitud','Teléfono','Disponible','Etapa','Estado','Grafológico','Chapi','Examen','Carta oferta','Cursos acred.','Cursos hab.','3D','Nivelación','Contratación','WA enviados'];
+  const rows=persons.map(p=>[p.nombre,p.cargo,p.proyecto,p.mandante,p.solicitadoPor,p.fechaSolicitud,p.telefono,p.disponible,p.etapa+1,p.estado,p.resultadoGrafologico,p.resultadoChapi,p.resultadoExamen,p.respuestaCartaOferta,p.cursosAcreditacion,p.cursosHabilitacion,p.modulo3D,p.nivelacion,p.fechaContratacion,countWA(p)]);
+  const csv=[h,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(';')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));
+  a.download=`reclutamiento_vcsa_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+}
+function openEmail(){
+  const act=persons.filter(p=>p.estado==='EnProceso').length;
+  const con=persons.filter(p=>p.estado==='Contratado').length;
+  const arc=persons.filter(p=>p.estado==='Archivado').length;
+  const hoy=new Date().toLocaleDateString('es-CL');
+  const det=persons.filter(p=>p.estado==='EnProceso').map(p=>`  • ${p.nombre} (${p.cargo}) — ${p.proyecto} — Etapa ${p.etapa+1}: ${ETAPAS[p.etapa]?.label||''}`).join('\n');
+  const body=`Reporte de Reclutamiento BHP — ${hoy}\n\nEn proceso: ${act} | Contratados: ${con} | Archivados: ${arc}\n\n${det}`;
+  window.open(`mailto:?subject=${encodeURIComponent('Reporte Reclutamiento BHP — '+hoy)}&body=${encodeURIComponent(body)}`);
+}
+
+// ═══════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════
+function switchTab(t){showWrap(t);}
+function showWrap(t){
+  ['main','arc','kpi'].forEach(x=>{
+    document.getElementById('wrap-'+x).style.display=x===t?'block':'none';
+    document.getElementById('tab-'+x).classList.toggle('active',x===t);
+  });
+  if(t==='kpi') renderKPI();
+  if(t==='arc') renderArc();
+}
+
+function closeModal(){document.getElementById('modal-bg').style.display='none';openSteps={};}
+function bgClose(e){if(e.target.id==='modal-bg') closeModal();}
+
+// ═══════════════════════════════════════════════
+// MSAL INIT
+// ═══════════════════════════════════════════════
+(async function(){
+  try{
+    msalInstance=new msal.PublicClientApplication(MSAL_CONFIG);
+    await msalInstance.initialize();
+    const resp=await msalInstance.handleRedirectPromise();
+    if(resp){accessToken=resp.accessToken;}
+    else{
+      const accounts=msalInstance.getAllAccounts();
+      if(accounts.length>0){
+        try{
+          const r=await msalInstance.acquireTokenSilent({scopes:SP_SCOPES,account:accounts[0]});
+          accessToken=r.accessToken;
+        }catch(e){
+          await msalInstance.loginRedirect({scopes:SP_SCOPES});return;
+        }
+      }else{
+        await msalInstance.loginRedirect({scopes:SP_SCOPES});return;
+      }
+    }
+    document.getElementById('msal-screen').remove();
+    await recargar();
+  }catch(err){
+    const s=document.getElementById('msal-screen');
+    s.innerHTML=`<div style="text-align:center;padding:2rem;font-family:'Figtree',sans-serif">
+      <div style="font-size:15px;font-weight:700;color:#dc2626;margin-bottom:8px">Error de autenticación</div>
+      <div style="font-size:13px;color:#6a6760;margin-bottom:16px">${err.message}</div>
+      <button onclick="location.reload()" style="padding:8px 18px;background:#1a1816;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px">Reintentar</button>
+    </div>`;
+  }
+})();
+</script>
+</body>
+</html>
