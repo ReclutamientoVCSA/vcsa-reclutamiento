@@ -407,15 +407,15 @@ let WA_CFG = JSON.parse(localStorage.getItem(WA_KEY)||'{"mode":"web","firma":"Eq
 // ═══════════════════════════════════════════════
 const ETAPAS = [
   {n:1,  key:'solicitud',    fase:'pre', label:'Solicitud de requerimiento',       resp:'Analista Reclutamiento',  waKey:'disponibilidad', condicional:false, sla:2,  slaAmb:1},
-  {n:2,  key:'grafologico',  fase:'val', label:'Test grafológico',                 resp:'Analista Reclutamiento',  waKey:'grafologico',    condicional:false, sla:7,  slaAmb:5},
+  {n:2,  key:'grafologico',  fase:'val', label:'Test grafológico',                 resp:'Analista Reclutamiento',  waKey:'grafologico',    condicional:false, sla:3,  slaAmb:2},
   {n:3,  key:'chapi',        fase:'val', label:'Antecedentes legales',             resp:'Analista Reclutamiento',  waKey:null,             condicional:false, sla:3,  slaAmb:2},
   {n:4,  key:'examen',       fase:'med', label:'Examen médico preocupacional',     resp:'Analista Reclutamiento',  waKey:'examen',         condicional:false, sla:7,  slaAmb:5},
-  {n:5,  key:'carta',        fase:'inc', label:'Carta de oferta',                  resp:'RRHH / Analista',         waKey:'carta',          condicional:false, sla:3,  slaAmb:2},
+  {n:5,  key:'carta',        fase:'inc', label:'Carta de oferta',                  resp:'RRHH / Analista',         waKey:'carta',          condicional:false, sla:2,  slaAmb:1},
   {n:6,  key:'carga',        fase:'inc', label:'Carga de cursos en plataforma',    resp:'Analista Reclutamiento',  waKey:null,             condicional:false, sla:2,  slaAmb:1},
-  {n:7,  key:'cursos_acred', fase:'inc', label:'Cursos de acreditación',           resp:'Candidato / RRHH',        waKey:'cursos',         condicional:false, sla:14, slaAmb:10},
-  {n:8,  key:'cursos_hab',   fase:'inc', label:'Cursos de habilitación de trabajo',resp:'Candidato / RRHH',        waKey:null,             condicional:false, sla:14, slaAmb:10},
+  {n:7,  key:'cursos_acred', fase:'inc', label:'Cursos de acreditación',           resp:'Candidato / RRHH',        waKey:'cursos',         condicional:false, sla:3,  slaAmb:2},
+  {n:8,  key:'cursos_hab',   fase:'inc', label:'Cursos de habilitación de trabajo',resp:'Candidato / RRHH',        waKey:null,             condicional:false, sla:4,  slaAmb:3},
   {n:9,  key:'mod3d',        fase:'inc', label:'Módulo 3D',                        resp:'Candidato / RRHH',        waKey:null,             condicional:true,  sla:7,  slaAmb:5},
-  {n:10, key:'nivelacion',   fase:'inc', label:'Nivelación',                       resp:'Candidato / RRHH',        waKey:null,             condicional:true,  sla:7,  slaAmb:5},
+  {n:10, key:'nivelacion',   fase:'inc', label:'Nivelación',                       resp:'Candidato / RRHH',        waKey:null,             condicional:true,  sla:999,slaAmb:998},
   {n:11, key:'contratacion', fase:'fin', label:'Contratación',                     resp:'RRHH → Contratación',     waKey:'ingreso',        condicional:false, sla:3,  slaAmb:2},
 ];
 const FASES = {
