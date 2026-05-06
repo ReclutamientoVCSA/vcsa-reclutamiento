@@ -662,7 +662,7 @@ async function sendWA(pid,idx,phone,msgOverride){
       if(r.ok){logWA(pid,idx,phone,msg,'api');return{ok:true,mode:'api'};}
     }catch(e){}
   }
-  window.open('https://wa.me/'+phone.replace(/[^0-9]/g,'')+'?text='+encodeURIComponent(msg),'_blank');
+  window.open('whatsapp://send?phone='+phone.replace(/[^0-9]/g,'')+'&text='+encodeURIComponent(msg),'_blank');
   logWA(pid,idx,phone,msg,'web');
   return{ok:true,mode:'web'};
 }
